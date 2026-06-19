@@ -16,6 +16,7 @@ brand, class/type, abv, net contents, bottler name+addr, country of origin (impo
 - all fuzzy match EXCEPT the warning (normalize case/space/punct -> STONE'S THROW = Stone's Throw)
 - warning strict: exact text, only "GOVERNMENT WARNING" caps+bold (not the whole thing), title-case = reject
 - free cross-check: proof should = 2x abv
+- use structured outputs
 
 ## confidence / routing
 - not just "rate confidence 1-10"
