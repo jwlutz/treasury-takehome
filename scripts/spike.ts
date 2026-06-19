@@ -2,8 +2,8 @@
 // run: npx tsx scripts/spike.ts   env: MODEL, DETAIL (high/auto/low), PER (images per bucket)
 import { readFileSync } from 'node:fs';
 import { join, extname } from 'node:path';
-import { verify } from '../lib/policy/index';
-import type { ApplicationFields, BeverageType } from '../lib/policy/types';
+import { verify, inferBeverage } from '../lib/policy/index';
+import type { ApplicationFields } from '../lib/policy/types';
 import { extractLabelEvidence } from '../lib/extract/extract';
 import { assessImageQuality } from '../lib/quality/imageQuality';
 
@@ -15,14 +15,7 @@ for (const line of readFileSync(join(process.cwd(), '.env'), 'utf8').split('\n')
 
 const PER = Number(process.env.PER ?? 2);
 
-// beverage type comes from the application form in the real app; infer it here from class/type for the spike
-function inferBeverage(classType: string): BeverageType {
-  const s = (classType ?? '').toLowerCase();
-  if (/wine|cabernet|chardonnay|merlot|pinot|ros|sauvignon|riesling|zinfandel|port|sherry/.test(s)) return 'wine';
-  if (/ale|lager|ipa|stout|porter|pilsner|beer|malt|brown|saison/.test(s)) return 'malt_beverage';
-  return 'distilled_spirits';
-}
-
+// beverage type comes from the application form in the real app; infer it from class/type here (lib/policy/beverage)
 const norm = (s: any) => String(s ?? '').replace(/\s+/g, ' ').trim();
 const DECISION: Record<string, string> = { correct: 'approve', wrong: 'reject', needs_review: 'needs_review' };
 const FIELDS = ['brand_name', 'class_type', 'alcohol_content', 'net_contents', 'producer_name', 'producer_address', 'country_of_origin', 'government_warning_text'];

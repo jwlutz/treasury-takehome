@@ -69,3 +69,19 @@ brand, class/type, abv, net contents, bottler name+addr, country of origin (impo
 - fuzzy threshold? tune on the test set
 - how real do the generated labels need to look?
 
+## build
+
+- [x] decision engine: normalize + warning + verify, beverage + field aware (lib/policy) + 23 tests
+- [x] evidence extraction: gpt-5.4-mini, forced structured output, model only EXTRACTS (lib/extract)
+- [x] image-quality gate: blur + contrast, independent of the model (lib/quality) + 2 tests
+- [x] pipeline: extract + gate run in parallel -> verify (lib/pipeline)
+- [x] single-label page: drag-drop/browse upload, app-values form, big 3-state result + reasons
+- [x] /api/verify: key stays server-side, nothing written to disk
+- [x] try an example: one of each outcome, no upload needed
+- [ ] batch: many files / csv manifest -> results table + status line
+- [ ] review dashboard + role switch (agent queue / supervisor metrics)
+- [ ] risk-coverage curve (the differentiator)
+- [ ] accessibility pass: keyboard + screen reader + contrast audit
+- [ ] readme (setup, approach, tradeoffs) + deploy to vercel
+- [ ] stretch: golden test set page, generate + test match/mismatch buttons
+
