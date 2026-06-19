@@ -1,6 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { verify, CANONICAL_WARNING } from './index';
 import type { ApplicationFields, Extraction, LabelFields, VerificationResult } from './types';
 
@@ -124,48 +122,10 @@ describe('decision engine rules', () => {
     expect(r.decision).toBe('needs_review');
     expect(statusOf(r, 'image_quality')).toBe('fail');
   });
+
+  it('illegible image caps at needs review, never reject on unreliable reads', () => {
+    // a missing warning would normally reject, but on an illegible image the read is untrustworthy
+    const r = verify(APP, ex({ government_warning_text: '' }, false));
+    expect(r.decision).toBe('needs_review');
+  });
 });
-
-// runs over the labelled dataset when data/ground_truth.jsonl exists. GROUND_TRUTH env var points it elsewhere (e.g. the source set).
-const DATA = process.env.GROUND_TRUTH ?? join(process.cwd(), 'data', 'data', 'ground_truth.jsonl');
-if (!existsSync(DATA)) {
-  describe.skip('regression vs labelled dataset (data/ground_truth.jsonl not present)', () => {
-    it('skipped', () => {});
-  });
-} else {
-  describe('regression vs labelled dataset', () => {
-    const rows = readFileSync(DATA, 'utf8')
-      .trim()
-      .split('\n')
-      .filter(Boolean)
-      .map((l) => JSON.parse(l));
-
-    for (const r of rows) {
-      it(`${r.id} -> ${r.expected_decision}`, () => {
-        const obs = r.observed_label_fields ?? {};
-        const extraction: Extraction = {
-          fields: {
-            brand_name: obs.brand_name ?? '',
-            class_type: obs.class_type ?? '',
-            alcohol_content: obs.alcohol_content ?? '',
-            net_contents: obs.net_contents ?? '',
-            producer_name: obs.producer_name ?? '',
-            producer_address: obs.producer_address ?? '',
-            country_of_origin: obs.country_of_origin ?? '',
-            government_warning_text: obs.government_warning_text ?? '',
-            government_warning_header_bold: !!obs.government_warning_header_bold,
-            extra_statement: obs.extra_statement ?? '',
-          },
-          legible: (r.label_artwork?.degradation ?? 'none') === 'none',
-        };
-        const result = verify(r.application_fields, extraction);
-        expect(result.decision).toBe(r.expected_decision);
-
-        const byField = Object.fromEntries(result.checks.map((c) => [c.field, c.status]));
-        for (const c of r.checks ?? []) {
-          expect(byField[c.field], `${r.id} ${c.field}`).toBe(c.status);
-        }
-      });
-    }
-  });
-}

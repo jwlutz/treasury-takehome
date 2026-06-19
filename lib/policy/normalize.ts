@@ -19,6 +19,13 @@ export function normalizeLoose(s: string): string {
     .trim();
 }
 
+/** strip producer lead-ins so "produced/bottled by X" matches "X" */
+export function normalizeProducer(s: string): string {
+  return normalizeText(s)
+    .replace(/^(?:produced|distilled|bottled|brewed|made|manufactured|vinted|blended|imported|crafted|packaged)[a-z/&,\s]*?\bby\b\s*/, '')
+    .trim();
+}
+
 /** case-insensitive but keeps punctuation + words (only collapses whitespace). the warning uses this. */
 export function foldCase(s: string): string {
   return (s ?? '')

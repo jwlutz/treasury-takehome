@@ -1,7 +1,7 @@
 // the engine. compare application vs extracted fields -> per-field checks -> one decision.
 
 import type { ApplicationFields, Decision, Extraction, FieldCheck, VerificationResult } from './types';
-import { normalizeText, similarity } from './normalize';
+import { normalizeText, normalizeProducer, similarity } from './normalize';
 import { checkWarningContent, checkWarningFormat } from './warning';
 
 const ok = (field: string): FieldCheck => ({ field, status: 'pass', severity: 'ok', message: '' });
@@ -81,10 +81,10 @@ export function checkNetContents(app: string, obs: string): FieldCheck {
 }
 
 // soft fields (producer name/address). a mismatch is a judgment call -> review, not reject.
-function checkSoft(field: string, app: string, obs: string): FieldCheck {
+function checkSoft(field: string, app: string, obs: string, normFn: (s: string) => string = normalizeText): FieldCheck {
   if (!(obs ?? '').trim()) return warn(field, `${field.replace(/_/g, ' ')} is missing from the label.`);
   if (app === obs) return ok(field);
-  if (normalizeText(app) === normalizeText(obs)) return note(field, 'Differs by capitalization or punctuation only.');
+  if (normFn(app) === normFn(obs)) return note(field, 'Matches after normalizing formatting.');
   return warn(field, 'Value differs between application and label.');
 }
 
@@ -104,6 +104,8 @@ export function checkImageQuality(legible: boolean, qualityNote?: string): Field
 }
 
 function rollup(checks: FieldCheck[]): Decision {
+  // illegible image -> the reads are unreliable, so never auto-reject/clear on them. send to a human.
+  if (checks.some((c) => c.field === 'image_quality' && c.severity === 'warning')) return 'needs_review';
   if (checks.some((c) => c.severity === 'error')) return 'reject';
   if (checks.some((c) => c.severity === 'warning')) return 'needs_review';
   return 'approve';
@@ -116,7 +118,7 @@ export function verify(app: ApplicationFields, extraction: Extraction): Verifica
     checkClassType(app.class_type, f.class_type),
     checkAlcohol(app.alcohol_content, f.alcohol_content),
     checkNetContents(app.net_contents, f.net_contents),
-    checkSoft('producer_name', app.producer_name, f.producer_name),
+    checkSoft('producer_name', app.producer_name, f.producer_name, normalizeProducer),
     checkSoft('producer_address', app.producer_address, f.producer_address),
     checkCountry(app.country_of_origin, f.country_of_origin),
     checkWarningContent(f.government_warning_text, f.extra_statement),
