@@ -16,6 +16,23 @@ const MODEL = process.env.MODEL ?? 'gpt-4o-mini';
 const DETAIL = (process.env.DETAIL ?? 'high') as 'high' | 'auto' | 'low';
 const PER = Number(process.env.PER ?? 2); // images per ai_ bucket
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const isReasoning = /^(gpt-5|o\d)/.test(MODEL); // gpt-5.x / o-series take reasoning-style params
+
+// strip any param a given model rejects (logprobs / temperature / reasoning_effort) and retry once
+async function callModel(params: any) {
+  try {
+    return await client.chat.completions.create(params);
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    const retry = { ...params };
+    let changed = false;
+    for (const p of ['logprobs', 'top_logprobs', 'temperature', 'reasoning_effort']) {
+      if (p in retry && new RegExp(p, 'i').test(msg)) { delete retry[p]; changed = true; }
+    }
+    if (changed) { console.warn(`  (${MODEL}: stripped unsupported param, retrying)`); return client.chat.completions.create(retry); }
+    throw e;
+  }
+}
 
 const SYSTEM = `You read U.S. alcohol beverage labels for TTB compliance. You are given a photo of one label. Transcribe the required fields EXACTLY as printed.
 
@@ -26,8 +43,7 @@ Rules:
 - government_warning_header_bold: true only if the "GOVERNMENT WARNING" header is visibly bolder/heavier than the text after it.
 - extra_statement: any extra standalone statement near the warning (e.g. "CONTAINS SULFITES"); "" if none.
 - legible: set to false if ANY required text is degraded by glare, blur, low contrast, skew, or cropping, EVEN IF you can still guess it. Only set true when every required field is crisp and clearly readable. When in doubt, set false.
-- legibility_note: which field/issue when legible is false, else "".
-- field_confidence: 0.0-1.0, how sure you are each field was read correctly.`;
+- legibility_note: which field/issue when legible is false, else "".`;
 
 const STR = { type: ['string', 'null'] };
 const SCHEMA = {
@@ -36,7 +52,7 @@ const SCHEMA = {
   required: [
     'brand_name', 'class_type', 'alcohol_content', 'net_contents', 'producer_name',
     'producer_address', 'country_of_origin', 'government_warning_text',
-    'government_warning_header_bold', 'extra_statement', 'legible', 'legibility_note', 'field_confidence',
+    'government_warning_header_bold', 'extra_statement', 'legible', 'legibility_note',
   ],
   properties: {
     brand_name: STR, class_type: STR, alcohol_content: STR, net_contents: STR,
@@ -46,16 +62,6 @@ const SCHEMA = {
     extra_statement: { type: 'string' },
     legible: { type: 'boolean' },
     legibility_note: { type: 'string' },
-    field_confidence: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['brand_name', 'class_type', 'alcohol_content', 'net_contents', 'producer_name', 'producer_address', 'country_of_origin', 'government_warning'],
-      properties: {
-        brand_name: { type: 'number' }, class_type: { type: 'number' }, alcohol_content: { type: 'number' },
-        net_contents: { type: 'number' }, producer_name: { type: 'number' }, producer_address: { type: 'number' },
-        country_of_origin: { type: 'number' }, government_warning: { type: 'number' },
-      },
-    },
   },
 };
 
@@ -63,10 +69,8 @@ async function extract(imagePath: string) {
   const abs = join(process.cwd(), 'data', imagePath);
   const b64 = readFileSync(abs).toString('base64');
   const ext = extname(abs).slice(1).toLowerCase().replace('jpg', 'jpeg');
-  const t0 = Date.now();
-  const res = await client.chat.completions.create({
+  const params: any = {
     model: MODEL,
-    temperature: 0,
     logprobs: true,
     response_format: { type: 'json_schema', json_schema: { name: 'label_extraction', strict: true, schema: SCHEMA } },
     messages: [
@@ -79,7 +83,10 @@ async function extract(imagePath: string) {
         ],
       },
     ],
-  });
+  };
+  if (!isReasoning) params.temperature = 0; // gpt-5.x/o-series reject temperature; logprobs still work on 5.4-mini
+  const t0 = Date.now();
+  const res = await callModel(params);
   const ms = Date.now() - t0;
   const parsed = JSON.parse(res.choices[0].message.content ?? '{}');
   const lps = res.choices[0].logprobs?.content ?? [];
