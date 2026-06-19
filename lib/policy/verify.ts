@@ -1,8 +1,18 @@
-// the engine. compare application vs extracted fields -> per-field checks -> one decision.
+// the engine. application + evidence record + beverage rules -> per-field checks -> one decision.
+// the model only perceives (the evidence record); this code makes every call, deterministically.
 
-import type { ApplicationFields, Decision, Extraction, FieldCheck, VerificationResult } from './types';
+import type {
+  ApplicationFields,
+  BeverageType,
+  Decision,
+  EvidenceRecord,
+  FieldCheck,
+  FieldEvidence,
+  ImageQuality,
+  VerificationResult,
+} from './types';
 import { normalizeText, normalizeProducer, similarity } from './normalize';
-import { checkWarningContent, checkWarningFormat } from './warning';
+import { checkWarning } from './warning';
 
 const ok = (field: string): FieldCheck => ({ field, status: 'pass', severity: 'ok', message: '' });
 const note = (field: string, message: string): FieldCheck => ({ field, status: 'pass_with_note', severity: 'note', message });
@@ -22,108 +32,118 @@ const DOMESTIC = new Set([
 // brand above this similarity = "probably the same, let a human glance" instead of hard reject. tune on the set.
 const BRAND_REVIEW_THRESHOLD = 0.7;
 
+// abv is mandatory for spirits; for wine/malt it can be optional depending on type/context.
+const abvRequired = (bt: BeverageType) => bt === 'distilled_spirits';
+
 function parsePct(s: string): number | null {
   const m = (s ?? '').match(/(\d+(?:\.\d+)?)\s*%/);
   return m ? parseFloat(m[1]) : null;
 }
-
 function parseProof(s: string): number | null {
   const m = (s ?? '').match(/(\d+(?:\.\d+)?)\s*proof/i);
   return m ? parseFloat(m[1]) : null;
 }
 
-export function checkBrand(app: string, obs: string): FieldCheck {
-  const field = 'brand_name';
-  if (!(obs ?? '').trim()) return err(field, 'Brand name is missing from the label.');
-  if (app === obs) return ok(field);
-  if (normalizeText(app) === normalizeText(obs)) return note(field, 'Brand differs by capitalization or punctuation only.');
-  if (similarity(app, obs) >= BRAND_REVIEW_THRESHOLD) {
-    return warn(field, 'Brand differs by spelling, not just case or punctuation.');
+// legibility + absence handling shared by every data field. returns a check to short-circuit,
+// or null when the field is present + legible and the caller should compare the value.
+// field-aware absence: only the warning is a hard reject when missing (handled in warning.ts);
+// every other field "not visible in this photo" -> needs_review (may be on another panel / embossed).
+function gate(field: string, ev: FieldEvidence, required: boolean): FieldCheck | null {
+  if (ev.visible && !ev.legible) return warn(field, 'visible but not clearly legible; needs a human look');
+  if (!ev.visible || !ev.value || !ev.value.trim()) {
+    if (!required) return ok(field);
+    return warn(field, 'not visible in this image (may be on another panel or embossed)');
   }
-  return err(field, `Brand name does not match: application "${app}", label "${obs}".`);
+  return null;
 }
 
-export function checkClassType(app: string, obs: string): FieldCheck {
-  const field = 'class_type';
-  if (!(obs ?? '').trim()) return err(field, 'Class/type designation is missing from the label.');
-  if (normalizeText(app) === normalizeText(obs)) return ok(field);
-  return err(field, `Application class/type is "${app}" but label says "${obs}".`);
+export function checkBrand(app: string, ev: FieldEvidence): FieldCheck {
+  const g = gate('brand_name', ev, true);
+  if (g) return g;
+  const o = ev.value!;
+  if (app === o) return ok('brand_name');
+  if (normalizeText(app) === normalizeText(o)) return note('brand_name', 'differs by capitalization or punctuation only');
+  if (similarity(app, o) >= BRAND_REVIEW_THRESHOLD) return warn('brand_name', 'differs by spelling, not just case or punctuation');
+  return err('brand_name', `brand does not match: application "${app}", label "${o}"`);
 }
 
-export function checkAlcohol(app: string, obs: string): FieldCheck {
-  const field = 'alcohol_content';
-  const o = (obs ?? '').trim();
-  if (!o) return err(field, 'Alcohol content is missing from the label.');
-  if (!o.includes('%')) return err(field, 'Label omits the percent symbol on the alcohol content.');
+export function checkClassType(app: string, ev: FieldEvidence): FieldCheck {
+  const g = gate('class_type', ev, true);
+  if (g) return g;
+  const o = ev.value!;
+  return normalizeText(app) === normalizeText(o) ? ok('class_type') : err('class_type', `application class/type is "${app}" but label says "${o}"`);
+}
 
+export function checkAlcohol(app: string, ev: FieldEvidence, required: boolean): FieldCheck {
+  const g = gate('alcohol_content', ev, required);
+  if (g) return g;
+  const o = ev.value!.trim();
+  if (!o.includes('%')) return err('alcohol_content', 'label omits the percent symbol on the alcohol content');
   const a = parsePct(app);
-  const b = parsePct(obs);
+  const b = parsePct(o);
   if (a == null || b == null) {
-    return normalizeText(app) === normalizeText(obs) ? ok(field) : err(field, 'Alcohol content does not match the application.');
+    return normalizeText(app) === normalizeText(o) ? ok('alcohol_content') : err('alcohol_content', 'alcohol content does not match the application');
   }
-  if (a !== b) return err(field, `Application says ${a}% but label says ${b}%.`);
-
-  // cross-check: proof should = 2x abv
-  const op = parseProof(obs);
-  if (op != null && Math.abs(op - 2 * b) > 0.1) {
-    return err(field, `Stated proof (${op}) is not twice the ABV (${b}%).`);
-  }
-  return ok(field);
+  if (a !== b) return err('alcohol_content', `application says ${a}% but label says ${b}%`);
+  const op = parseProof(o);
+  if (op != null && Math.abs(op - 2 * b) > 0.1) return err('alcohol_content', `stated proof (${op}) is not twice the ABV (${b}%)`);
+  return ok('alcohol_content');
 }
 
-export function checkNetContents(app: string, obs: string): FieldCheck {
-  const field = 'net_contents';
-  if (!(obs ?? '').trim()) return err(field, 'Net contents are omitted from the label.');
+export function checkNetContents(app: string, ev: FieldEvidence): FieldCheck {
+  const g = gate('net_contents', ev, true);
+  if (g) return g;
+  const o = ev.value!;
   const na = normalizeText(app).replace(/\s+/g, '');
-  const nb = normalizeText(obs).replace(/\s+/g, '');
-  if (na === nb) return ok(field);
-  return err(field, `Application says "${app}" but label says "${obs}".`);
+  const nb = normalizeText(o).replace(/\s+/g, '');
+  return na === nb ? ok('net_contents') : err('net_contents', `application says "${app}" but label says "${o}"`);
 }
 
 // soft fields (producer name/address). a mismatch is a judgment call -> review, not reject.
-function checkSoft(field: string, app: string, obs: string, normFn: (s: string) => string = normalizeText): FieldCheck {
-  if (!(obs ?? '').trim()) return warn(field, `${field.replace(/_/g, ' ')} is missing from the label.`);
-  if (app === obs) return ok(field);
-  if (normFn(app) === normFn(obs)) return note(field, 'Matches after normalizing formatting.');
-  return warn(field, 'Value differs between application and label.');
+function checkSoft(field: string, app: string, ev: FieldEvidence, normFn: (s: string) => string): FieldCheck {
+  const g = gate(field, ev, true);
+  if (g) return g;
+  const o = ev.value!;
+  if (app === o) return ok(field);
+  if (normFn(app) === normFn(o)) return note(field, 'matches after normalizing formatting');
+  return warn(field, 'value differs between application and label');
 }
 
-export function checkCountry(app: string, obs: string): FieldCheck {
-  const field = 'country_of_origin';
-  // country of origin only required for imports
-  if (DOMESTIC.has(normalizeText(app))) return ok(field);
-  if (!(obs ?? '').trim()) return err(field, `Imported product, but the label omits the country of origin (${app}).`);
-  if (normalizeText(app) === normalizeText(obs)) return ok(field);
-  return err(field, `Country of origin mismatch: application "${app}", label "${obs}".`);
+export function checkCountry(app: string, ev: FieldEvidence, isImport: boolean): FieldCheck {
+  const g = gate('country_of_origin', ev, isImport);
+  if (g) return g;
+  if (!isImport) return ok('country_of_origin'); // domestic: optional on the label
+  const o = ev.value!;
+  return normalizeText(app) === normalizeText(o) ? ok('country_of_origin') : err('country_of_origin', `country of origin mismatch: application "${app}", label "${o}"`);
 }
 
-export function checkImageQuality(legible: boolean, qualityNote?: string): FieldCheck {
-  const field = 'image_quality';
-  if (!legible) return warn(field, qualityNote || 'Image quality may impair reliable reading; route to human review.');
-  return ok(field);
+function imageQualityCheck(iq?: ImageQuality): FieldCheck {
+  if (iq && !iq.ok) return warn('image_quality', iq.reasons.join('; ') || 'image quality may impair reliable reading');
+  return ok('image_quality');
 }
 
-function rollup(checks: FieldCheck[]): Decision {
-  // illegible image -> the reads are unreliable, so never auto-reject/clear on them. send to a human.
-  if (checks.some((c) => c.field === 'image_quality' && c.severity === 'warning')) return 'needs_review';
+function rollup(checks: FieldCheck[], gateFailed: boolean): Decision {
+  // an untrustworthy image -> never auto-reject/clear on its reads. send to a human.
+  if (gateFailed) return 'needs_review';
   if (checks.some((c) => c.severity === 'error')) return 'reject';
   if (checks.some((c) => c.severity === 'warning')) return 'needs_review';
   return 'approve';
 }
 
-export function verify(app: ApplicationFields, extraction: Extraction): VerificationResult {
-  const f = extraction.fields;
+export function verify(app: ApplicationFields, ev: EvidenceRecord, imageQuality?: ImageQuality): VerificationResult {
+  const isImport = !DOMESTIC.has(normalizeText(app.country_of_origin));
+  const [warnContent, warnFormat] = checkWarning(ev.government_warning, ev.extra_statement);
   const checks: FieldCheck[] = [
-    checkBrand(app.brand_name, f.brand_name),
-    checkClassType(app.class_type, f.class_type),
-    checkAlcohol(app.alcohol_content, f.alcohol_content),
-    checkNetContents(app.net_contents, f.net_contents),
-    checkSoft('producer_name', app.producer_name, f.producer_name, normalizeProducer),
-    checkSoft('producer_address', app.producer_address, f.producer_address),
-    checkCountry(app.country_of_origin, f.country_of_origin),
-    checkWarningContent(f.government_warning_text, f.extra_statement),
-    checkWarningFormat(f.government_warning_text, f.government_warning_header_bold),
-    checkImageQuality(extraction.legible, extraction.qualityNote),
+    checkBrand(app.brand_name, ev.brand_name),
+    checkClassType(app.class_type, ev.class_type),
+    checkAlcohol(app.alcohol_content, ev.alcohol_content, abvRequired(app.beverage_type)),
+    checkNetContents(app.net_contents, ev.net_contents),
+    checkSoft('producer_name', app.producer_name, ev.producer_name, normalizeProducer),
+    checkSoft('producer_address', app.producer_address, ev.producer_address, normalizeText),
+    checkCountry(app.country_of_origin, ev.country_of_origin, isImport),
+    warnContent,
+    warnFormat,
+    imageQualityCheck(imageQuality),
   ];
-  return { decision: rollup(checks), checks };
+  return { decision: rollup(checks, imageQuality ? !imageQuality.ok : false), checks };
 }

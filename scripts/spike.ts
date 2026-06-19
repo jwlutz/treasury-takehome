@@ -4,6 +4,7 @@ import OpenAI from 'openai';
 import { readFileSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import { verify } from '../lib/policy/index';
+import { assessImageQuality } from '../lib/quality/imageQuality';
 import type { ApplicationFields, Extraction } from '../lib/policy/types';
 
 // load .env (no dep)
@@ -136,14 +137,17 @@ async function main() {
   for (const r of rows) {
     const { parsed, ms, meanProb, minTok } = await extract(r.image_path);
     latencies.push(ms);
+    const gate = await assessImageQuality(join(process.cwd(), 'data', r.image_path));
     const extraction = toExtraction(parsed);
+    extraction.legible = extraction.legible && gate.ok;
+    if (!gate.ok) extraction.qualityNote = gate.reasons.join('; ');
     const result = verify(r.application_fields, extraction);
     const expected = DECISION[r.expected_decision] ?? r.expected_decision;
     const ok = result.decision === expected;
     if (ok) decisionHits++;
 
     console.log(`[${r.id}] ${r.expected_decision} -> expect ${expected} | got ${result.decision} ${ok ? 'OK' : 'MISS'}`);
-    console.log(`  ${(ms / 1000).toFixed(1)}s  conf(mean=${meanProb?.toFixed(3)} min-token="${minTok.token}"@${minTok.p.toFixed(2)})  legible=${extraction.legible}${extraction.legible ? '' : ' (' + parsed.legibility_note + ')'}`);
+    console.log(`  ${(ms / 1000).toFixed(1)}s  conf(mean=${meanProb?.toFixed(3)} min-token="${minTok.token}"@${minTok.p.toFixed(2)})  legible=${extraction.legible}  gate=${gate.ok ? 'ok' : 'FAIL:' + gate.reasons.join(',')} [blur=${gate.metrics.blur.toFixed(0)} contrast=${gate.metrics.contrast.toFixed(0)}]`);
 
     // field-level read accuracy vs manifest observed truth
     const obs = r.observed_label_fields;

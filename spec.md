@@ -49,6 +49,9 @@ brand, class/type, abv, net contents, bottler name+addr, country of origin (impo
 - "generate & test match / mismatch" buttons
   - svg/html template → png, NOT diffusion (garbles text + needs blocked outbound). mismatch = perturb one field
 - glare/angle photo demo maybe
+- accessibility mode on by default:
+  - chatbot that will highlight buttons and explain processes
+  - tunable behavior (what do we do with missing fields, or just add this to assumptions that we assumed xyz)
 
 ## constraints
 - ~5s to verify (vendor died at 30-40s). image-gen demo exempt
