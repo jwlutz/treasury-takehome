@@ -99,7 +99,7 @@ export async function POST(req: Request) {
   try {
     const res = await client().chat.completions.create(params);
     const out = JSON.parse(res.choices[0].message.content ?? '{}');
-    return NextResponse.json({ say: String(out.say ?? ''), highlight: out.highlight ?? null });
+    return NextResponse.json({ say: String(out.say ?? ''), highlight: out.highlight ?? null, tokens: res.usage?.total_tokens ?? 0 });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message ?? 'guide failed' }, { status: 502 });
   }

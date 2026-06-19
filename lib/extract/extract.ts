@@ -76,6 +76,7 @@ export interface ExtractResult {
   raw: any;
   latencyMs: number;
   confidence: number | null; // mean token probability from logprobs
+  tokens: number; // total tokens for this call (usage meter)
 }
 
 // strip any param a given model rejects (logprobs / temperature / reasoning_effort) and retry once
@@ -122,5 +123,5 @@ export async function extractLabelEvidence(image: Buffer, mime = 'image/jpeg'): 
   const raw = JSON.parse(res.choices[0].message.content ?? '{}');
   const lps = res.choices[0].logprobs?.content ?? [];
   const confidence = lps.length ? Math.exp(lps.reduce((s: number, t: any) => s + t.logprob, 0) / lps.length) : null;
-  return { evidence: raw as EvidenceRecord, raw, latencyMs, confidence };
+  return { evidence: raw as EvidenceRecord, raw, latencyMs, confidence, tokens: res.usage?.total_tokens ?? 0 };
 }

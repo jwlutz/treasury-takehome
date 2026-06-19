@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import type { ApplicationFields, Decision, FieldCheck } from '../lib/policy/types';
 import { DECISION, SEV_MARK, checkLabel } from './ui';
 import { generate, renderLabelSvg, type Scenario } from '../lib/generate';
+import { recordUsage, useUsage } from './usage';
+import RadialMenu, { type RadialItem } from './RadialMenu';
 
 interface VerifyResponse {
   decision: Decision;
@@ -85,6 +88,8 @@ function svgToPngFile(svg: string, name: string): Promise<File> {
 }
 
 export default function Home() {
+  const router = useRouter();
+  const usage = useUsage();
   const [app, setApp] = useState<ApplicationFields>(EMPTY);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
@@ -107,6 +112,17 @@ export default function Home() {
   useEffect(() => {
     if (result) resultRef.current?.focus();
   }, [result]);
+
+  // paste an image straight from the clipboard (usability: browse + drag-drop + paste)
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const item = Array.from(e.clipboardData?.items ?? []).find((i) => i.type.startsWith('image/'));
+      const f = item?.getAsFile();
+      if (f) takeFile(f);
+    };
+    document.addEventListener('paste', onPaste);
+    return () => document.removeEventListener('paste', onPaste);
+  }, []);
 
   function setField(key: keyof ApplicationFields, value: string) {
     setApp((prev) => ({ ...prev, [key]: value }));
@@ -142,6 +158,7 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'verification failed');
       setResult(data);
+      recordUsage({ verifications: 1, tokens: data.tokens ?? 0 });
     } catch (err: any) {
       setError(err?.message ?? 'something went wrong');
     } finally {
@@ -169,55 +186,66 @@ export default function Home() {
       setFile(f);
       setPreview(URL.createObjectURL(f));
       setGenerated({ note: g.note, expected: g.expected });
+      recordUsage({ images: 1 });
       await runVerify(f, g.application);
     } catch (err: any) {
       setError(err?.message ?? 'could not generate a label');
     }
   }
 
+  function clearAll() {
+    setApp(EMPTY);
+    takeFile(null);
+  }
+
+  const radialItems: RadialItem[] = [
+    {
+      id: 'examples',
+      label: 'Try example',
+      dataGuide: 'examples',
+      options: [
+        { label: 'Compliant', tone: 'success', disabled: !examples[0], onSelect: () => examples[0] && loadExample(examples[0]) },
+        { label: 'Noncompliant', tone: 'danger', disabled: !examples[1], onSelect: () => examples[1] && loadExample(examples[1]) },
+        { label: 'Unclear photo', tone: 'warning', disabled: !examples[2], onSelect: () => examples[2] && loadExample(examples[2]) },
+      ],
+    },
+    {
+      id: 'generate',
+      label: 'Generate test',
+      dataGuide: 'generate',
+      options: [
+        { label: 'Compliant', tone: 'success', onSelect: () => generateAndRun('compliant') },
+        { label: 'Noncompliant', tone: 'danger', onSelect: () => generateAndRun('noncompliant') },
+        { label: 'Random', onSelect: () => generateAndRun('random') },
+      ],
+    },
+    { id: 'batch', label: 'Batch', onSelect: () => router.push('/batch') },
+  ];
+
   return (
-    <main>
+    <main className="home">
       <header>
         <h1>Label check</h1>
-        <p>
-          Upload an alcohol label, compare it against the submitted application values, and get a clear
-          approve / needs review / reject call with the reasons. A triage tool, not an auto-approval.
-        </p>
+        <p>Compare uploaded photo of label to application values.</p>
       </header>
 
-      <h2>Try an example</h2>
-      <div className="examples" data-guide="examples">
-        {examples.length === 0 && <p className="meta">loading examples...</p>}
-        {examples.map((ex) => (
-          <button key={ex.id} type="button" className="example" onClick={() => loadExample(ex)}>
-            <strong>{ex.title}</strong>
-            <span>{ex.blurb}</span>
-          </button>
-        ))}
-      </div>
+      <div className="workspace">
+        <aside className="rail">
+          <div className="rail-usage">
+            <div className="rail-usage-top">Usage · session</div>
+            <div className="rail-usage-tokens">
+              <b>{usage.tokens.toLocaleString()}</b> tokens
+            </div>
+            <div className="meta">
+              {usage.verifications} checks · {usage.chats} chats · {usage.images} generated
+            </div>
+          </div>
+          <RadialMenu items={radialItems} />
+        </aside>
 
-      <h2>Generate a test</h2>
-      <p className="meta">make a fresh label and check it live. we render the image and own the values, so the expected call is known.</p>
-      <div className="examples" data-guide="generate">
-        <button type="button" className="example" disabled={loading} onClick={() => generateAndRun('compliant')}>
-          <strong>Compliant</strong>
-          <span>valid label, expect approve</span>
-        </button>
-        <button type="button" className="example" disabled={loading} onClick={() => generateAndRun('noncompliant')}>
-          <strong>Noncompliant</strong>
-          <span>break one thing, expect reject</span>
-        </button>
-        <button type="button" className="example" disabled={loading} onClick={() => generateAndRun('random')}>
-          <strong>Random</strong>
-          <span>surprise me</span>
-        </button>
-      </div>
-
-      <form onSubmit={submit}>
-        <h2>Label image</h2>
-        <label
+        <section
+          className={`stage${dragOver ? ' over' : ''}`}
           data-guide="upload"
-          className={`drop${dragOver ? ' over' : ''}`}
           onDragOver={(e) => {
             e.preventDefault();
             setDragOver(true);
@@ -229,72 +257,56 @@ export default function Home() {
             takeFile(e.dataTransfer.files?.[0] ?? null);
           }}
         >
-          <b>Drop a label image here, or choose a file</b>
-          <small>jpg or png. nothing is stored - the image is checked in memory and discarded.</small>
-          <input
-            className="visually-hidden"
-            type="file"
-            accept="image/*"
-            onChange={(e) => takeFile(e.target.files?.[0] ?? null)}
-          />
-        </label>
-        {preview && (
-          <div className="preview">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={preview} alt="selected label preview" />
-            <span className="meta">{file?.name}</span>
-          </div>
-        )}
+          {preview ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="stage-img" src={preview} alt="label preview" />
+              <button type="button" className="stage-replace" onClick={clearAll}>
+                Replace
+              </button>
+            </>
+          ) : (
+            <label className="drop">
+              <b>Drop a label photo here</b>
+              <small>or choose a file · paste · this becomes the image once loaded</small>
+              <input className="visually-hidden" type="file" accept="image/*" onChange={(e) => takeFile(e.target.files?.[0] ?? null)} />
+            </label>
+          )}
+        </section>
 
-        <h2>Application values</h2>
-        <fieldset>
-          <legend>What the submission says the label should show</legend>
-          <div className="grid">
-            <div className="field" data-guide="field-beverage_type">
-              <label htmlFor="beverage_type">Beverage type</label>
-              <select
-                id="beverage_type"
-                value={app.beverage_type}
-                onChange={(e) => setField('beverage_type', e.target.value)}
-              >
-                {BEVERAGES.map((b) => (
-                  <option key={b.value} value={b.value}>
-                    {b.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {TEXT_FIELDS.map((f) => (
-              <div key={f.key} data-guide={`field-${f.key}`} className={`field${f.wide ? ' wide' : ''}`}>
-                <label htmlFor={f.key}>{f.label}</label>
-                <input
-                  id={f.key}
-                  type="text"
-                  value={app[f.key]}
-                  onChange={(e) => setField(f.key, e.target.value)}
-                />
+        <form className="fields" onSubmit={submit}>
+          <fieldset>
+            <legend>Application values</legend>
+            <div className="grid">
+              <div className="field" data-guide="field-beverage_type">
+                <label htmlFor="beverage_type">Beverage type</label>
+                <select id="beverage_type" value={app.beverage_type} onChange={(e) => setField('beverage_type', e.target.value)}>
+                  {BEVERAGES.map((b) => (
+                    <option key={b.value} value={b.value}>
+                      {b.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-            ))}
-          </div>
-        </fieldset>
+              {TEXT_FIELDS.map((f) => (
+                <div key={f.key} data-guide={`field-${f.key}`} className={`field${f.wide ? ' wide' : ''}`}>
+                  <label htmlFor={f.key}>{f.label}</label>
+                  <input id={f.key} type="text" value={app[f.key]} onChange={(e) => setField(f.key, e.target.value)} />
+                </div>
+              ))}
+            </div>
+          </fieldset>
 
-        <div className="actions">
-          <button className="btn" type="submit" disabled={loading} data-guide="verify">
-            {loading ? 'Checking...' : 'Verify label'}
-          </button>
-          <button
-            className="btn secondary"
-            type="button"
-            disabled={loading}
-            onClick={() => {
-              setApp(EMPTY);
-              takeFile(null);
-            }}
-          >
-            Clear
-          </button>
-        </div>
-      </form>
+          <div className="actions">
+            <button className="btn" type="submit" disabled={loading} data-guide="verify">
+              {loading ? 'Checking...' : 'Verify label'}
+            </button>
+            <button className="btn secondary" type="button" disabled={loading} onClick={clearAll}>
+              Clear
+            </button>
+          </div>
+        </form>
+      </div>
 
       {error && (
         <div className="alert" role="alert">
@@ -303,7 +315,7 @@ export default function Home() {
       )}
 
       {result && (
-        <section aria-live="polite" data-guide="result">
+        <section aria-live="polite" data-guide="result" className="result-section">
           <h2>Result</h2>
           <div className={`banner ${DECISION[result.decision].tone}`}>
             <span className="mark" aria-hidden="true">

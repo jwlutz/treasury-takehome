@@ -13,6 +13,7 @@ export interface VerifyImageResult {
   quality: ImageQuality;
   latencyMs: number;
   confidence: number | null; // mean token probability from logprobs, for the operating-point work later
+  tokens: number; // total tokens for this verification (usage meter)
 }
 
 export async function verifyImage(image: Buffer, app: ApplicationFields, mime = 'image/jpeg'): Promise<VerifyImageResult> {
@@ -28,5 +29,6 @@ export async function verifyImage(image: Buffer, app: ApplicationFields, mime = 
     quality: { ok: quality.ok, reasons: quality.reasons },
     latencyMs: extracted.latencyMs,
     confidence: extracted.confidence,
+    tokens: extracted.tokens,
   };
 }

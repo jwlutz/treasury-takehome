@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ApplicationFields, Decision, FieldCheck } from '../../lib/policy/types';
 import { parseManifestCsv, type BatchManifestRow } from '../../lib/csv';
 import { DECISION, checkLabel, topReason } from '../ui';
+import { recordUsage } from '../usage';
 
 type RowStatus = 'pending' | 'running' | 'done' | 'error';
 
@@ -21,9 +22,19 @@ interface Row extends BatchManifestRow, ResultState {
   expected?: Decision; // demo only, from the sample batch
 }
 
-const CONCURRENCY = 5;
 const CSV_HEADER =
   'filename,beverage_type,brand_name,class_type,alcohol_content,net_contents,producer_name,producer_address,country_of_origin';
+
+const APP_LABELS: [keyof ApplicationFields, string][] = [
+  ['beverage_type', 'Beverage type'],
+  ['brand_name', 'Brand'],
+  ['class_type', 'Class / type'],
+  ['alcohol_content', 'Alcohol'],
+  ['net_contents', 'Net contents'],
+  ['producer_name', 'Producer'],
+  ['producer_address', 'Address'],
+  ['country_of_origin', 'Country'],
+];
 
 async function dataUrlToFile(dataUrl: string, name: string, type: string): Promise<File> {
   const blob = await (await fetch(dataUrl)).blob();
@@ -46,6 +57,18 @@ export default function Batch() {
   const [role, setRole] = useState<'dashboard' | 'review'>('dashboard');
   const [sort, setSort] = useState<{ key: 'filename' | 'decision' | 'latency'; dir: number }>({ key: 'filename', dir: 1 });
   const [error, setError] = useState('');
+  const [concurrency, setConcurrency] = useState(6);
+  const [runStart, setRunStart] = useState(0);
+  const [now, setNow] = useState(0);
+  const [reviewing, setReviewing] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
+
+  // tick while a batch runs so the eta counts down between completions, not just on each one
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(id);
+  }, [running]);
 
   // the table is a pure projection of inputs (manifest + files) and outputs (results)
   const rows: Row[] = useMemo(
@@ -74,7 +97,20 @@ export default function Batch() {
   const avgLatency = done.length ? done.reduce((s, r) => s + (r.latencyMs ?? 0), 0) / done.length : 0;
   const graded = done.filter((r) => r.expected);
   const correct = graded.filter((r) => r.decision === r.expected).length;
-  const queue = rows.filter((r) => r.status === 'done' && r.decision !== 'approve' && !r.override);
+  // the queue is only what needs a human: items the engine sent to review. rejects are already decided.
+  const queue = rows.filter((r) => r.status === 'done' && r.decision === 'needs_review' && !r.override);
+
+  const reviewRow = reviewing ? rows.find((r) => r.filename === reviewing) : null;
+
+  function decide(filename: string, decision: Decision) {
+    setOne(filename, { override: decision });
+    const next = queue.find((r) => r.filename !== filename); // advance to the next one needing review
+    setReviewing(next?.filename ?? null);
+  }
+
+  const processed = done.length + errored;
+  const elapsed = runStart ? now - runStart : 0;
+  const etaMs = running && processed > 0 && processed < rows.length ? ((rows.length - processed) * elapsed) / processed : 0;
 
   const sorted = useMemo(() => {
     const copy = [...rows];
@@ -154,6 +190,8 @@ export default function Batch() {
     const items = manifest.filter((m) => files.has(m.filename));
     if (!items.length) return;
     setResults(Object.fromEntries(items.map((m) => [m.filename, { status: 'pending' as RowStatus }])));
+    setRunStart(Date.now());
+    setNow(Date.now());
     setRunning(true);
     let cursor = 0;
     const worker = async () => {
@@ -168,12 +206,13 @@ export default function Batch() {
           const data = await res.json();
           if (!res.ok) throw new Error(data.error ?? 'verification failed');
           setOne(m.filename, { status: 'done', decision: data.decision, checks: data.checks, latencyMs: data.latencyMs });
+          recordUsage({ verifications: 1, tokens: data.tokens ?? 0 });
         } catch (e: any) {
           setOne(m.filename, { status: 'error', message: e?.message ?? 'error' });
         }
       }
     };
-    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, items.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
     setRunning(false);
   }
 
@@ -231,6 +270,16 @@ export default function Batch() {
         <button type="button" className="btn secondary" onClick={reset} disabled={running}>
           Clear
         </button>
+        <label className="parallel">
+          Parallel
+          <select value={concurrency} onChange={(e) => setConcurrency(Number(e.target.value))} disabled={running}>
+            {[2, 4, 6, 8, 10].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       {error && (
@@ -239,10 +288,24 @@ export default function Batch() {
         </div>
       )}
 
+      {running && (
+        <div
+          className="progress"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={rows.length}
+          aria-valuenow={processed}
+          aria-label="batch progress"
+        >
+          <div className="progress-fill" style={{ width: `${rows.length ? (processed / rows.length) * 100 : 0}%` }} />
+        </div>
+      )}
+
       {hasRun && (
         <p className="statusline" aria-live="polite">
           {done.length}/{rows.length} done: {counts.cleared} cleared, {counts.flagged} flagged, {counts.review} review
           {errored > 0 && <> · {errored} errored</>}
+          {running && etaMs > 0 && <> · ~{Math.ceil(etaMs / 1000)}s left</>}
         </p>
       )}
 
@@ -341,44 +404,105 @@ export default function Batch() {
                 <p className="meta">review queue is clear. nothing left for a human to decide.</p>
               ) : (
                 <ul className="queue">
-                  {queue.map((r) => (
-                    <li key={r.filename}>
-                      <div className="q-head">
-                        {r.preview && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={r.preview} alt={`label ${r.filename}`} />
-                        )}
-                        <div>
-                          <strong>{r.filename}</strong>
+                  {queue.map((r) => {
+                    const reasons = (r.checks ?? []).filter((c) => c.severity === 'error' || c.severity === 'warning');
+                    return (
+                      <li key={r.filename}>
+                        <div className="q-head">
+                          {r.preview && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={r.preview} alt={`label ${r.filename}`} className="zoom" onClick={() => setLightbox(r.preview)} />
+                          )}
                           <div>
-                            <Pill decision={r.decision} />
+                            <strong>{r.filename}</strong>
+                            <div className="meta">
+                              {reasons.length} reason{reasons.length === 1 ? '' : 's'} to review
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <ul className="q-reasons">
-                        {(r.checks ?? [])
-                          .filter((c) => c.severity === 'error' || c.severity === 'warning')
-                          .map((c) => (
-                            <li key={c.field}>
-                              {checkLabel(c.field)}: {c.message}
-                            </li>
-                          ))}
-                      </ul>
-                      <div className="q-actions">
-                        <button type="button" className="btn" onClick={() => setOne(r.filename, { override: 'approve' })}>
-                          Clear it
-                        </button>
-                        <button type="button" className="btn secondary" onClick={() => setOne(r.filename, { override: 'reject' })}>
-                          Reject it
-                        </button>
-                      </div>
-                    </li>
-                  ))}
+                        <div className="q-actions">
+                          <button type="button" className="btn" onClick={() => setReviewing(r.filename)}>
+                            Review
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </section>
           )}
         </>
+      )}
+
+      {reviewRow && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`review ${reviewRow.filename}`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setReviewing(null);
+          }}
+        >
+          <div className="review-modal">
+            <div className="modal-head">
+              <strong>Review · {reviewRow.filename}</strong>
+              <button type="button" className="guide-x" aria-label="close" onClick={() => setReviewing(null)}>
+                ✕
+              </button>
+            </div>
+
+            <div className="review-body">
+              <div className="review-img">
+                {reviewRow.preview && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={reviewRow.preview} alt={`label ${reviewRow.filename}`} className="zoom" onClick={() => setLightbox(reviewRow.preview)} />
+                )}
+                <span className="meta">click image to enlarge</span>
+              </div>
+
+              <div className="review-data">
+                <h3>Why it needs review</h3>
+                <ul className="q-reasons">
+                  {(reviewRow.checks ?? [])
+                    .filter((c) => c.severity === 'error' || c.severity === 'warning')
+                    .map((c) => (
+                      <li key={c.field}>
+                        {checkLabel(c.field)}: {c.message}
+                      </li>
+                    ))}
+                </ul>
+
+                <h3>Application values</h3>
+                <dl className="review-fields">
+                  {APP_LABELS.map(([k, label]) => (
+                    <div key={k}>
+                      <dt>{label}</dt>
+                      <dd>{reviewRow.application[k]}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </div>
+
+            <div className="review-actions">
+              <button type="button" className="btn big-reject" onClick={() => decide(reviewRow.filename, 'reject')}>
+                Reject
+              </button>
+              <button type="button" className="btn big-approve" onClick={() => decide(reviewRow.filename, 'approve')}>
+                Accept
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {lightbox && (
+        <div className="lightbox" role="dialog" aria-label="enlarged label" onClick={() => setLightbox(null)}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={lightbox} alt="enlarged label" />
+        </div>
       )}
     </main>
   );

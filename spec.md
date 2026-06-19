@@ -78,9 +78,14 @@ brand, class/type, abv, net contents, bottler name+addr, country of origin (impo
 - [x] single-label page: drag-drop/browse upload, app-values form, big 3-state result + reasons
 - [x] /api/verify: key stays server-side, nothing written to disk
 - [x] try an example: one of each outcome, no upload needed
-- [x] batch: csv manifest + images -> bounded-concurrency run, live status line, sortable table (quote-aware csv + 5 tests)
-- [x] review dashboard + role switch: dashboard metrics / review queue with clear-or-reject override
-- [x] accessibility guide chat: on-by-default assistant, explains the flow + points at on-screen elements (/api/chat -> {say, highlight})
+- [x] batch: csv manifest + images -> adjustable-parallelism run, progress bar + eta, live status line, sortable table (quote-aware csv + 5 tests)
+- [x] review dashboard + role switch: dashboard metrics / review queue (needs-review only) -> review modal with big image (click to enlarge), expected values, the AI reason, big accept/reject + advance
+- [x] accessibility guide chat: on-by-default + minimizable assistant, explains the flow + points at on-screen elements with a red box (/api/chat -> {say, highlight})
+- [x] usage tracking: nav tab (/usage) + rail panel, tokens / checks / chats / generated (session only, resets on reload)
+- [x] report issue / feedback modal -> prefilled github issue (feedback/issue toggle)
+- [x] paste-to-upload (browse + drag-drop + paste)
+- [x] e2e: playwright covers the guide (answer + red box + minimize) and the feedback modal
+- [x] home redesign: left-rail radial menu (try example / generate test fan a semicircle; batch links out), centered dropzone that swaps to the image, fields beside it on one screen
 - [ ] tunable missing-field policy (strict/lenient) wired into verify() + surfaced in the guide
 - [ ] risk-coverage curve
 - [ ] accessibility pass: keyboard + screen reader + contrast audit

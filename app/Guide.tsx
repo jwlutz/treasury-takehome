@@ -5,6 +5,7 @@
 // it never acts on the user's behalf.
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { usePathname } from 'next/navigation';
+import { recordUsage } from './usage';
 
 interface Msg {
   role: 'user' | 'assistant';
@@ -60,6 +61,7 @@ export default function Guide() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'guide unavailable');
       setMessages((m) => [...m, { role: 'assistant', content: data.say || '...' }]);
+      recordUsage({ chats: 1, tokens: data.tokens ?? 0 });
       if (data.highlight) setTimeout(() => highlight(data.highlight), 120);
     } catch {
       setMessages((m) => [...m, { role: 'assistant', content: 'sorry, the guide is unavailable right now.' }]);

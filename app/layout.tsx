@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import Guide from './Guide';
+import Feedback from './Feedback';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -16,10 +17,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <nav className="nav" aria-label="primary">
           <div className="nav-inner">
-            <span className="brand">Label check</span>
-            <div className="nav-links">
-              <Link href="/" data-guide="nav-single">Single label</Link>
-              <Link href="/batch" data-guide="nav-batch">Batch</Link>
+            <Link href="/" className="brand">Label check</Link>
+            <div className="nav-right">
+              <div className="nav-links">
+                <Link href="/" data-guide="nav-single">Single label</Link>
+                <Link href="/batch" data-guide="nav-batch">Batch</Link>
+                <Link href="/usage" data-guide="nav-usage">Usage</Link>
+              </div>
+              <Feedback />
             </div>
           </div>
         </nav>
