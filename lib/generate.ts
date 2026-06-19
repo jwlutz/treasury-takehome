@@ -1,6 +1,7 @@
-// generate a synthetic label on the fly (an svg template -> png, NOT diffusion: diffusion garbles
-// text and needs outbound). we own both the rendered label and the application values, so the
-// expected decision is known. noncompliant = perturb exactly one thing.
+// generate a synthetic label on the fly. we own both the label spec and the application values, so
+// the expected decision is known; noncompliant = perturb exactly one thing. the spec can be drawn two
+// ways: imagePrompt() asks an image model for a photoreal bottle (live, needs outbound), or
+// renderLabelSvg() rasterizes a crisp template offline (the fallback when the image model is unavailable).
 import type { ApplicationFields } from './policy/types';
 import { CANONICAL_WARNING } from './policy/warning';
 
@@ -101,7 +102,37 @@ export function generate(scenario: Scenario, forceBreak?: Break): Generated {
   return { application, art, expected: 'reject', note };
 }
 
-// --- svg template ---------------------------------------------------------
+// --- live image-generation prompt -----------------------------------------
+
+// turn the label spec into an image-gen prompt that asks for the EXACT text we generated, so the
+// verifier still has known expected values to check against. the art carries the truth printed on
+// the bottle (including any deliberate violation: title-case header, missing/altered warning); for
+// abv/brand/net breaks the label stays correct and it's the application that lies, which the engine
+// catches as a mismatch either way.
+export function imagePrompt(art: LabelArt): string {
+  const fields = [
+    `the brand name "${art.brand}" in large prominent letters`,
+    `the class/type "${art.classType}"`,
+    `the alcohol content "${art.alcohol}"`,
+    `the net contents "${art.netContents}"`,
+    `"DISTILLED & BOTTLED BY ${art.producer}, ${art.address}"`,
+    `"PRODUCT OF ${art.country.toUpperCase()}"`,
+  ];
+  if (art.warning) {
+    const header = art.warningHeaderCaps ? 'GOVERNMENT WARNING:' : 'Government Warning:';
+    const body = art.warning.replace(/^GOVERNMENT WARNING:\s*/i, '');
+    fields.push(`a small-print warning that starts with the bold header "${header}" followed word-for-word by: ${body}`);
+  }
+  return [
+    `A photorealistic studio product photograph of a single ${art.classType} bottle, centered on a clean neutral surface with soft, even lighting.`,
+    `The front label is flat-on to the camera, large, and in razor-sharp focus, with crisp, perfectly legible printed text.`,
+    `The label shows exactly the following, each on its own line, spelled character-for-character:`,
+    ...fields.map((f) => `- ${f}`),
+    `Reproduce every word precisely as written. Do not add, omit, translate, or misspell any text, and add no other wording, logos, or stickers.`,
+  ].join('\n');
+}
+
+// --- svg template (offline fallback) --------------------------------------
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 

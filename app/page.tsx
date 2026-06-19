@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ApplicationFields, Decision, FieldCheck } from '../lib/policy/types';
 import { DECISION, SEV_MARK, checkLabel } from './ui';
-import { generate, renderLabelSvg, type Scenario } from '../lib/generate';
+import { generate, imagePrompt, renderLabelSvg, type Scenario } from '../lib/generate';
 import { recordUsage, useUsage } from './usage';
 import RadialMenu, { type RadialItem } from './RadialMenu';
 
@@ -95,6 +95,7 @@ export default function Home() {
   const [preview, setPreview] = useState<string>('');
   const [result, setResult] = useState<VerifyResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [genStatus, setGenStatus] = useState('');
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const [generated, setGenerated] = useState<{ note: string; expected: 'approve' | 'reject' } | null>(null);
@@ -180,20 +181,41 @@ export default function Home() {
     runVerify(file, app);
   }
 
-  // make a synthetic label, rasterize it to a png, and run it straight through the verifier.
-  // we own both sides so the expected outcome is known and shown next to the result.
+  // generate a fresh label image from an image model, then run it straight through the verifier.
+  // we own both sides (the label spec + the application values) so the expected outcome is known and
+  // shown next to the result. if the image model is unavailable (e.g. blocked outbound in prod), fall
+  // back to the offline svg template so the feature still works.
   async function generateAndRun(scenario: Scenario) {
     setError('');
+    setResult(null);
+    setGenerated(null);
     const g = generate(scenario);
+    setGenStatus('Generating a label image from the model… this can take ~20s');
     try {
-      const f = await svgToPngFile(renderLabelSvg(g.art), 'generated.png');
+      let f: File;
+      let fellBack = false;
+      try {
+        const res = await fetch('/api/generate-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: imagePrompt(g.art) }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.image) throw new Error(data.error ?? 'image generation failed');
+        f = await dataUrlToFile(data.image, 'generated.png');
+      } catch {
+        fellBack = true;
+        f = await svgToPngFile(renderLabelSvg(g.art), 'generated.png');
+      }
       setApp(g.application);
       setFile(f);
       setPreview(URL.createObjectURL(f));
-      setGenerated({ note: g.note, expected: g.expected });
+      setGenerated({ note: fellBack ? `${g.note} (image model unavailable — used the offline template)` : g.note, expected: g.expected });
       recordUsage({ images: 1 });
+      setGenStatus('');
       await runVerify(f, g.application);
     } catch (err: any) {
+      setGenStatus('');
       setError(err?.message ?? 'could not generate a label');
     }
   }
@@ -264,7 +286,12 @@ export default function Home() {
               takeFile(e.dataTransfer.files?.[0] ?? null);
             }}
           >
-            {preview ? (
+            {genStatus ? (
+              <div className="stage-busy" aria-live="polite">
+                <span className="spinner" aria-hidden="true" />
+                {genStatus}
+              </div>
+            ) : preview ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img className="stage-img" src={preview} alt="label preview" />

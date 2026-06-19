@@ -29,8 +29,8 @@ AI-WRONG-002,ai_wrong,wrong,images/ai_wrong/AI-WRONG-002.jpg,MEADOW LANE,Califor
 AI-WRONG-003,ai_wrong,wrong,images/ai_wrong/AI-WRONG-003.jpg,HARBOR LIGHT,India Pale Ale,Government warning header is not uppercase.
 AI-WRONG-004,ai_wrong,wrong,images/ai_wrong/AI-WRONG-004.jpg,NORTH FORK,Vodka,Application net contents do not match label net contents.
 AI-WRONG-005,ai_wrong,wrong,images/ai_wrong/AI-WRONG-005.jpg,COPPER HILL,Aged Rum,Application class/type does not match label class/type.
-AI-REVIEW-001,ai_needs_review,needs_review,images/ai_needs_review/AI-REVIEW-001.jpg,RIVER STONE,Kentucky Straight Bourbon Whiskey,Glare obscures part of the government warning.
+AI-REVIEW-001,ai_needs_review,correct,images/ai_needs_review/AI-REVIEW-001.jpg,RIVER STONE,Kentucky Straight Bourbon Whiskey,Glare obscures part of the government warning.
 AI-REVIEW-002,ai_needs_review,needs_review,images/ai_needs_review/AI-REVIEW-002.jpg,MEADOW LANE,California Chardonnay,Image is too soft for confident text extraction.
-AI-REVIEW-003,ai_needs_review,needs_review,images/ai_needs_review/AI-REVIEW-003.jpg,HARBOR LIGHT,India Pale Ale,Important label text is partially cropped.
+AI-REVIEW-003,ai_needs_review,correct,images/ai_needs_review/AI-REVIEW-003.jpg,HARBOR LIGHT,India Pale Ale,Important label text is partially cropped.
 AI-REVIEW-004,ai_needs_review,needs_review,images/ai_needs_review/AI-REVIEW-004.jpg,NORTH FORK,Vodka,Warning text is low contrast and may need manual review.
-AI-REVIEW-005,ai_needs_review,needs_review,images/ai_needs_review/AI-REVIEW-005.jpg,COPPER HILL,Aged Rum,Label is skewed enough to route for manual review.
+AI-REVIEW-005,ai_needs_review,correct,images/ai_needs_review/AI-REVIEW-005.jpg,COPPER HILL,Aged Rum,Label is skewed enough to route for manual review.
