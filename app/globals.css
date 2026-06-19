@@ -427,6 +427,27 @@ select:hover {
   font-weight: 600;
 }
 
+/* generated self-test outcome (expected vs got) */
+.gen-note {
+  margin: 0.7rem 0 0.2rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid;
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+.gen-note.ok {
+  background: var(--approve-bg);
+  color: var(--approve-ink);
+  border-color: var(--approve-line);
+}
+
+.gen-note.bad {
+  background: var(--review-bg);
+  color: var(--review-ink);
+  border-color: var(--review-line);
+}
+
 /* code + format hint */
 code {
   background: #eceff3;
@@ -773,21 +794,21 @@ button.th {
   cursor: not-allowed;
 }
 
-/* the element the guide points at */
+/* the element the guide points at: a bold red box so it's unmistakable which control to press */
 .guide-highlight {
-  outline: 3px solid var(--accent) !important;
+  outline: 4px solid #cc2222 !important;
   outline-offset: 3px;
   border-radius: var(--radius);
-  animation: guidePulse 2.4s ease;
+  animation: guidePulse 1.4s ease-in-out infinite;
 }
 
 @keyframes guidePulse {
   0%,
   100% {
-    box-shadow: 0 0 0 5px rgba(31, 78, 121, 0.22);
+    box-shadow: 0 0 0 4px rgba(204, 34, 34, 0.25);
   }
   50% {
-    box-shadow: 0 0 0 10px rgba(31, 78, 121, 0.32);
+    box-shadow: 0 0 0 11px rgba(204, 34, 34, 0.4);
   }
 }
 

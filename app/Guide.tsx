@@ -22,7 +22,7 @@ function highlight(id: string) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
   el.classList.add('guide-highlight');
-  setTimeout(() => el.classList.remove('guide-highlight'), 2600);
+  setTimeout(() => el.classList.remove('guide-highlight'), 4500);
 }
 
 export default function Guide() {

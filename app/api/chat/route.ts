@@ -13,6 +13,7 @@ const client = () => (_client ??= new OpenAI({ apiKey: process.env.OPENAI_API_KE
 const TARGETS: Record<string, { id: string; what: string }[]> = {
   single: [
     { id: 'examples', what: 'the "try an example" buttons that load a sample with no upload' },
+    { id: 'generate', what: 'the buttons that generate a fresh test label (compliant / noncompliant / random) and check it live' },
     { id: 'upload', what: 'the box to drop or choose a label image' },
     { id: 'field-beverage_type', what: 'the beverage type selector' },
     { id: 'field-brand_name', what: 'the brand name field' },

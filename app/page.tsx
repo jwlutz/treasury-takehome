@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { ApplicationFields, Decision, FieldCheck } from '../lib/policy/types';
 import { DECISION, SEV_MARK, checkLabel } from './ui';
+import { generate, renderLabelSvg, type Scenario } from '../lib/generate';
 
 interface VerifyResponse {
   decision: Decision;
@@ -54,6 +55,35 @@ async function dataUrlToFile(dataUrl: string, name: string): Promise<File> {
   return new File([blob], name, { type: blob.type });
 }
 
+// rasterize a self-contained svg to a png file in the browser (no outbound, uses system fonts)
+function svgToPngFile(svg: string, name: string): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || 760;
+      canvas.height = img.naturalHeight || 1000;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        reject(new Error('canvas unavailable'));
+        return;
+      }
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((b) => (b ? resolve(new File([b], name, { type: 'image/png' })) : reject(new Error('render failed'))), 'image/png');
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('svg render failed'));
+    };
+    img.src = url;
+  });
+}
+
 export default function Home() {
   const [app, setApp] = useState<ApplicationFields>(EMPTY);
   const [file, setFile] = useState<File | null>(null);
@@ -63,6 +93,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
+  const [generated, setGenerated] = useState<{ note: string; expected: 'approve' | 'reject' } | null>(null);
   const resultRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -84,6 +115,7 @@ export default function Home() {
   function takeFile(f: File | null) {
     setResult(null);
     setError('');
+    setGenerated(null);
     setFile(f);
     setPreview(f ? URL.createObjectURL(f) : '');
   }
@@ -92,24 +124,20 @@ export default function Home() {
     setApp(ex.application);
     setResult(null);
     setError('');
+    setGenerated(null);
     const f = await dataUrlToFile(ex.image, `${ex.id}.${ex.mime.split('/')[1] ?? 'jpg'}`);
     setFile(f);
     setPreview(ex.image);
   }
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    if (!file) {
-      setError('add a label image first.');
-      return;
-    }
+  async function runVerify(f: File, a: ApplicationFields) {
     setLoading(true);
     setError('');
     setResult(null);
     try {
       const fd = new FormData();
-      fd.append('image', file);
-      fd.append('application', JSON.stringify(app));
+      fd.append('image', f);
+      fd.append('application', JSON.stringify(a));
       const res = await fetch('/api/verify', { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'verification failed');
@@ -118,6 +146,32 @@ export default function Home() {
       setError(err?.message ?? 'something went wrong');
     } finally {
       setLoading(false);
+    }
+  }
+
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!file) {
+      setError('add a label image first.');
+      return;
+    }
+    runVerify(file, app);
+  }
+
+  // make a synthetic label, rasterize it to a png, and run it straight through the verifier.
+  // we own both sides so the expected outcome is known and shown next to the result.
+  async function generateAndRun(scenario: Scenario) {
+    setError('');
+    const g = generate(scenario);
+    try {
+      const f = await svgToPngFile(renderLabelSvg(g.art), 'generated.png');
+      setApp(g.application);
+      setFile(f);
+      setPreview(URL.createObjectURL(f));
+      setGenerated({ note: g.note, expected: g.expected });
+      await runVerify(f, g.application);
+    } catch (err: any) {
+      setError(err?.message ?? 'could not generate a label');
     }
   }
 
@@ -140,6 +194,23 @@ export default function Home() {
             <span>{ex.blurb}</span>
           </button>
         ))}
+      </div>
+
+      <h2>Generate a test</h2>
+      <p className="meta">make a fresh label and check it live. we render the image and own the values, so the expected call is known.</p>
+      <div className="examples" data-guide="generate">
+        <button type="button" className="example" disabled={loading} onClick={() => generateAndRun('compliant')}>
+          <strong>Compliant</strong>
+          <span>valid label, expect approve</span>
+        </button>
+        <button type="button" className="example" disabled={loading} onClick={() => generateAndRun('noncompliant')}>
+          <strong>Noncompliant</strong>
+          <span>break one thing, expect reject</span>
+        </button>
+        <button type="button" className="example" disabled={loading} onClick={() => generateAndRun('random')}>
+          <strong>Random</strong>
+          <span>surprise me</span>
+        </button>
       </div>
 
       <form onSubmit={submit}>
@@ -251,6 +322,13 @@ export default function Home() {
             {result.confidence != null && <> · read confidence {(result.confidence * 100).toFixed(0)}%</>}
             {!result.quality.ok && <> · image quality flagged</>}
           </p>
+
+          {generated && (
+            <div className={`gen-note ${result.decision === generated.expected ? 'ok' : 'bad'}`}>
+              Generated test. {generated.note}. Expected to {generated.expected}; got {result.decision}
+              {result.decision === generated.expected ? ' ✓' : ' ✗'}
+            </div>
+          )}
 
           <ul className="checks">
             {result.checks.map((c) => (

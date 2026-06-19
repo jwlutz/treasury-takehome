@@ -85,5 +85,6 @@ brand, class/type, abv, net contents, bottler name+addr, country of origin (impo
 - [ ] risk-coverage curve
 - [ ] accessibility pass: keyboard + screen reader + contrast audit
 - [ ] readme (setup, approach, tradeoffs) + deploy to vercel
-- [ ] stretch: golden test set page, generate + test match/mismatch buttons
+- [x] generate & test: render a label (compliant / noncompliant / random) -> svg to png -> verify live, expected vs got (+ 9 tests)
+- [ ] stretch: golden test set page with running accuracy
 
