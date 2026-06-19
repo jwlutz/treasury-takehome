@@ -127,7 +127,7 @@ describe('decision engine rules', () => {
 });
 
 // runs over the labelled dataset when data/ground_truth.jsonl exists. GROUND_TRUTH env var points it elsewhere (e.g. the source set).
-const DATA = process.env.GROUND_TRUTH ?? join(process.cwd(), 'data', 'ground_truth.jsonl');
+const DATA = process.env.GROUND_TRUTH ?? join(process.cwd(), 'data', 'data', 'ground_truth.jsonl');
 if (!existsSync(DATA)) {
   describe.skip('regression vs labelled dataset (data/ground_truth.jsonl not present)', () => {
     it('skipped', () => {});

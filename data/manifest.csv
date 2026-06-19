@@ -1,0 +1,36 @@
+id,category,expected_decision,image_path,brand_name,class_type,known_issues
+REAL-001,real,real_reference,images/real/REAL-001-26083001000403.png,EAGLE'S NEST,BOURBON WHISKY,
+REAL-002,real,real_reference,images/real/REAL-002-26099001000759.jpg,21ST AMENDMENT,AMARETTO,
+REAL-003,real,real_reference,images/real/REAL-003-26099001000759.jpg,21ST AMENDMENT,AMARETTO,
+REAL-004,real,real_reference,images/real/REAL-004-26100001000711.jpg,BEGANI,TABLE RED WINE,
+REAL-005,real,real_reference,images/real/REAL-005-26100001000711.png,BEGANI,TABLE RED WINE,
+REAL-006,real,real_reference,images/real/REAL-006-26102001000117.jpeg,BACCO WEST LLC,TABLE RED WINE,
+REAL-007,real,real_reference,images/real/REAL-007-26104001000195.jpg,NECK OF THE WOODS,MALT BEVERAGES SPECIALITIES - FLAVORED,
+REAL-008,real,real_reference,images/real/REAL-008-26113001000629.jpg,BETTO'S,VODKA 80-89 PROOF,
+REAL-009,real,real_reference,images/real/REAL-009-26113001000629.jpg,BETTO'S,VODKA 80-89 PROOF,
+REAL-010,real,real_reference,images/real/REAL-010-26113001000629.jpg,BETTO'S,VODKA 80-89 PROOF,
+REAL-011,real,real_reference,images/real/REAL-011-26117001000728.png,MAUX COCKTAILS,OTHER SPECIALTIES & PROPRIETARIES,
+REAL-012,real,real_reference,images/real/REAL-012-26117001000728.png,MAUX COCKTAILS,OTHER SPECIALTIES & PROPRIETARIES,
+REAL-013,real,real_reference,images/real/REAL-013-26117001000730.png,MAUX COCKTAILS,OTHER SPECIALTIES & PROPRIETARIES,
+REAL-014,real,real_reference,images/real/REAL-014-26117001000730.png,MAUX COCKTAILS,OTHER SPECIALTIES & PROPRIETARIES,
+REAL-015,real,real_reference,images/real/REAL-015-26117001000731.png,MAUX COCKTAILS,OTHER SPECIALTIES & PROPRIETARIES,
+REAL-016,real,real_reference,images/real/REAL-016-26117001000731.png,MAUX COCKTAILS,OTHER SPECIALTIES & PROPRIETARIES,
+REAL-017,real,real_reference,images/real/REAL-017-26121001000047.jpeg,STARR CRAFT BREWERY,STOUT,
+REAL-018,real,real_reference,images/real/REAL-018-26121001000151.png,10 BROTHERS,STRAIGHT BOURBON WHISKY,
+REAL-019,real,real_reference,images/real/REAL-019-26121001000151.png,10 BROTHERS,STRAIGHT BOURBON WHISKY,
+REAL-020,real,real_reference,images/real/REAL-020-26124001000480.png,HANDCRAFTED,VODKA SPECIALTIES,
+AI-CORRECT-001,ai_correct,correct,images/ai_correct/AI-CORRECT-001.jpg,RIVER STONE,Kentucky Straight Bourbon Whiskey,
+AI-CORRECT-002,ai_correct,correct,images/ai_correct/AI-CORRECT-002.jpg,MEADOW LANE,California Chardonnay,
+AI-CORRECT-003,ai_correct,correct,images/ai_correct/AI-CORRECT-003.jpg,HARBOR LIGHT,India Pale Ale,
+AI-CORRECT-004,ai_correct,correct,images/ai_correct/AI-CORRECT-004.jpg,NORTH FORK,Vodka,
+AI-CORRECT-005,ai_correct,correct,images/ai_correct/AI-CORRECT-005.jpg,COPPER HILL,Aged Rum,
+AI-WRONG-001,ai_wrong,wrong,images/ai_wrong/AI-WRONG-001.jpg,RIVER STONE,Kentucky Straight Bourbon Whiskey,Application ABV does not match label ABV.
+AI-WRONG-002,ai_wrong,wrong,images/ai_wrong/AI-WRONG-002.jpg,MEADOW LANE,California Chardonnay,Government warning is missing from the label.
+AI-WRONG-003,ai_wrong,wrong,images/ai_wrong/AI-WRONG-003.jpg,HARBOR LIGHT,India Pale Ale,Government warning header is not uppercase.
+AI-WRONG-004,ai_wrong,wrong,images/ai_wrong/AI-WRONG-004.jpg,NORTH FORK,Vodka,Application net contents do not match label net contents.
+AI-WRONG-005,ai_wrong,wrong,images/ai_wrong/AI-WRONG-005.jpg,COPPER HILL,Aged Rum,Application class/type does not match label class/type.
+AI-REVIEW-001,ai_needs_review,needs_review,images/ai_needs_review/AI-REVIEW-001.jpg,RIVER STONE,Kentucky Straight Bourbon Whiskey,Glare obscures part of the government warning.
+AI-REVIEW-002,ai_needs_review,needs_review,images/ai_needs_review/AI-REVIEW-002.jpg,MEADOW LANE,California Chardonnay,Image is too soft for confident text extraction.
+AI-REVIEW-003,ai_needs_review,needs_review,images/ai_needs_review/AI-REVIEW-003.jpg,HARBOR LIGHT,India Pale Ale,Important label text is partially cropped.
+AI-REVIEW-004,ai_needs_review,needs_review,images/ai_needs_review/AI-REVIEW-004.jpg,NORTH FORK,Vodka,Warning text is low contrast and may need manual review.
+AI-REVIEW-005,ai_needs_review,needs_review,images/ai_needs_review/AI-REVIEW-005.jpg,COPPER HILL,Aged Rum,Label is skewed enough to route for manual review.
