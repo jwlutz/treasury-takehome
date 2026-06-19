@@ -43,7 +43,7 @@ export default function Batch() {
   const [expected, setExpected] = useState<Map<string, Decision>>(new Map());
   const [results, setResults] = useState<Record<string, ResultState>>({});
   const [running, setRunning] = useState(false);
-  const [role, setRole] = useState<'supervisor' | 'agent'>('supervisor');
+  const [role, setRole] = useState<'dashboard' | 'review'>('dashboard');
   const [sort, setSort] = useState<{ key: 'filename' | 'decision' | 'latency'; dir: number }>({ key: 'filename', dir: 1 });
   const [error, setError] = useState('');
 
@@ -196,16 +196,16 @@ export default function Batch() {
 
       <h2>Load a batch</h2>
       <div className="card">
-        <button type="button" className="btn" onClick={loadSample} disabled={running}>
+        <button type="button" className="btn" onClick={loadSample} disabled={running} data-guide="sample">
           Load sample batch (15 labels)
         </button>
         <p className="meta">or bring your own:</p>
         <div className="grid">
-          <div className="field">
+          <div className="field" data-guide="csv">
             <label htmlFor="csv">Manifest CSV (filename → expected values)</label>
             <input id="csv" type="file" accept=".csv,text/csv" onChange={(e) => onCsv(e.target.files?.[0] ?? null)} />
           </div>
-          <div className="field">
+          <div className="field" data-guide="images">
             <label htmlFor="imgs">Label images</label>
             <input id="imgs" type="file" accept="image/*" multiple onChange={(e) => onImages(e.target.files)} />
           </div>
@@ -225,7 +225,7 @@ export default function Batch() {
       </div>
 
       <div className="actions">
-        <button type="button" className="btn" onClick={run} disabled={running || rows.length === 0}>
+        <button type="button" className="btn" onClick={run} disabled={running || rows.length === 0} data-guide="run">
           {running ? 'Running…' : `Run batch (${rows.length})`}
         </button>
         <button type="button" className="btn secondary" onClick={reset} disabled={running}>
@@ -249,15 +249,15 @@ export default function Batch() {
       {hasRun && (
         <>
           <div className="roles" role="group" aria-label="view">
-            <button type="button" className={role === 'supervisor' ? 'on' : ''} aria-pressed={role === 'supervisor'} onClick={() => setRole('supervisor')}>
-              Supervisor
+            <button type="button" data-guide="dashboard" className={role === 'dashboard' ? 'on' : ''} aria-pressed={role === 'dashboard'} onClick={() => setRole('dashboard')}>
+              Dashboard
             </button>
-            <button type="button" className={role === 'agent' ? 'on' : ''} aria-pressed={role === 'agent'} onClick={() => setRole('agent')}>
-              Agent queue {queue.length > 0 && <span className="badge">{queue.length}</span>}
+            <button type="button" data-guide="review-queue" className={role === 'review' ? 'on' : ''} aria-pressed={role === 'review'} onClick={() => setRole('review')}>
+              Review queue {queue.length > 0 && <span className="badge">{queue.length}</span>}
             </button>
           </div>
 
-          {role === 'supervisor' ? (
+          {role === 'dashboard' ? (
             <section>
               <div className="cards">
                 <div className="stat">
@@ -338,7 +338,7 @@ export default function Batch() {
           ) : (
             <section>
               {queue.length === 0 ? (
-                <p className="meta">queue is clear — nothing left for a human to decide.</p>
+                <p className="meta">review queue is clear. nothing left for a human to decide.</p>
               ) : (
                 <ul className="queue">
                   {queue.map((r) => (

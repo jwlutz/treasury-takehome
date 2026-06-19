@@ -132,7 +132,7 @@ export default function Home() {
       </header>
 
       <h2>Try an example</h2>
-      <div className="examples">
+      <div className="examples" data-guide="examples">
         {examples.length === 0 && <p className="meta">loading examples...</p>}
         {examples.map((ex) => (
           <button key={ex.id} type="button" className="example" onClick={() => loadExample(ex)}>
@@ -145,6 +145,7 @@ export default function Home() {
       <form onSubmit={submit}>
         <h2>Label image</h2>
         <label
+          data-guide="upload"
           className={`drop${dragOver ? ' over' : ''}`}
           onDragOver={(e) => {
             e.preventDefault();
@@ -178,7 +179,7 @@ export default function Home() {
         <fieldset>
           <legend>What the submission says the label should show</legend>
           <div className="grid">
-            <div className="field">
+            <div className="field" data-guide="field-beverage_type">
               <label htmlFor="beverage_type">Beverage type</label>
               <select
                 id="beverage_type"
@@ -193,7 +194,7 @@ export default function Home() {
               </select>
             </div>
             {TEXT_FIELDS.map((f) => (
-              <div key={f.key} className={`field${f.wide ? ' wide' : ''}`}>
+              <div key={f.key} data-guide={`field-${f.key}`} className={`field${f.wide ? ' wide' : ''}`}>
                 <label htmlFor={f.key}>{f.label}</label>
                 <input
                   id={f.key}
@@ -207,7 +208,7 @@ export default function Home() {
         </fieldset>
 
         <div className="actions">
-          <button className="btn" type="submit" disabled={loading}>
+          <button className="btn" type="submit" disabled={loading} data-guide="verify">
             {loading ? 'Checking...' : 'Verify label'}
           </button>
           <button
@@ -231,7 +232,7 @@ export default function Home() {
       )}
 
       {result && (
-        <section aria-live="polite">
+        <section aria-live="polite" data-guide="result">
           <h2>Result</h2>
           <div className={`banner ${DECISION[result.decision].tone}`}>
             <span className="mark" aria-hidden="true">
