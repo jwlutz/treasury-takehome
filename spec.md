@@ -1,15 +1,67 @@
-- need to extract text from image labels, decide if it's a match with something in db (is the match-against given?)
-- 5 second latency
-- batch uploads
-- government warning required all caps by law
-  - everything else is fuzzy match ("judgement")
-- image quality grading/rejection system?
-- blocked outbound traffic is a constraint to acknowledge
+upload label pic(s) -> check against the application values -> clear / flag / review. triage, not auto-approve. basically inventory recon again.
 
-- this is very similar to inventory reconciliation project. we want it to be easy to handle batches and edge cases. need review dashboard
+## flow
+- upload image + expected values (come WITH the submission, not a db to download)
+- model reads fields off the image
+- code compares + decides
+- clear / flagged / needs review (reason if review). review pile to a dashboard, agent works it
 
-- inputs are going to be given with image. simple go/no go
-- model will choose clear, flagged, needs review (if glare, unsure, etc) and needs review should have reason attached
-- where am I gonna get test data from?
-- auth/scoped roles need to be simulated
-- look at actual cola db to see fields?
+## key split
+- model only EXTRACTS. code DECIDES. keeps it auditable "abv 45 != 40"
+- forced structured output, never guess a field
+- two kinds of blank: not on label = fail (missing required) vs can't read = review. not the same thing
+
+## fields
+brand, class/type, abv, net contents, bottler name+addr, country of origin (imports), govt warning
+- all fuzzy match EXCEPT the warning (normalize case/space/punct -> STONE'S THROW = Stone's Throw)
+- warning strict: exact text, only "GOVERNMENT WARNING" caps+bold (not the whole thing), title-case = reject
+- free cross-check: proof should = 2x abv
+
+## confidence / routing
+- not just "rate confidence 1-10"
+- blend: agreement across a couple samples + did it actually quote the text off the label + the cross-checks
+- cascade: one fast pass, only escalate the unsure ones -> stays under 5s
+- cutoff comes from data, not a vibes 90%
+- skip logprobs, skip multi-model council (correlated errors, not mathematically worth it)
+
+## batch
+- many files / folder + csv manifest (filename → expected values)
+- results table sortable + status line: "247 done: 198 cleared, 31 flagged, 18 review"
+- parallelize for batches?
+
+## usability
+- big browse button AND drag-drop, paste, photo
+- "try an example" so you don't have to upload anything to see it work
+- minimal typing, plain words, big + high contrast
+- result is obvious: big green/amber/red + the reason
+
+## differentiator
+- risk-coverage curve → "to keep false-clears under 1% we auto-clear X%". bounds the scary error, puts a number on sarah's "drowning in routine"
+
+## test data
+- generate labels myself + write the expected values (own both sides)
+- ~30-50, on-purpose edge cases: clean, abv off, title-case warning, missing warning, glare→review, STONE'S THROW, proof≠2×abv
+- doubles as the risk-coverage set
+
+## stretch
+- golden test set page on the site, live dispositions + running accuracy
+- "generate & test match / mismatch" buttons
+  - svg/html template → png, NOT diffusion (garbles text + needs blocked outbound). mismatch = perturb one field
+- glare/angle photo demo maybe
+
+## constraints
+- ~5s to verify (vendor died at 30-40s). image-gen demo exempt
+- network blocks outbound: acknowledge in readme, prod would need a local model
+- no pii, don't store images, session memory only
+- standalone, no cola integration
+
+## roles — fake it
+- agent: queue + approve/reject. supervisor: batch summary + metrics. role switcher, no real auth
+
+## stack
+- nextjs + vercel, serverless route hides the key, gpt vision? need to check model costs
+
+## open Qs
+- fuzzy threshold? tune on the test set
+- how real do the generated labels need to look?
+
