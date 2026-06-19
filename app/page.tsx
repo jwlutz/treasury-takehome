@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { ApplicationFields, Decision, FieldCheck } from '../lib/policy/types';
+import { DECISION, SEV_MARK, checkLabel } from './ui';
 
 interface VerifyResponse {
   decision: Decision;
@@ -47,28 +48,6 @@ const EMPTY: ApplicationFields = {
   producer_address: '',
   country_of_origin: '',
 };
-
-const DECISION: Record<Decision, { label: string; tone: string; mark: string; blurb: string }> = {
-  approve: { label: 'Approve', tone: 'tone-approve', mark: '✓', blurb: 'the label matches the application.' },
-  needs_review: { label: 'Needs review', tone: 'tone-review', mark: '⚠', blurb: 'something needs a human look before a call.' },
-  reject: { label: 'Reject', tone: 'tone-reject', mark: '✕', blurb: 'a compliance problem was found on the label.' },
-};
-
-// how each check key reads in plain words
-const CHECK_LABELS: Record<string, string> = {
-  brand_name: 'Brand name',
-  class_type: 'Class / type',
-  alcohol_content: 'Alcohol content',
-  net_contents: 'Net contents',
-  producer_name: 'Producer / bottler name',
-  producer_address: 'Producer / bottler address',
-  country_of_origin: 'Country of origin',
-  government_warning: 'Government warning',
-  government_warning_format: 'Warning format',
-  image_quality: 'Image quality',
-};
-
-const SEV_MARK: Record<string, string> = { error: '✕', warning: '⚠', note: '✓', ok: '✓' };
 
 async function dataUrlToFile(dataUrl: string, name: string): Promise<File> {
   const blob = await (await fetch(dataUrl)).blob();
@@ -279,7 +258,7 @@ export default function Home() {
                   {SEV_MARK[c.severity] ?? '•'}
                 </span>
                 <span>
-                  <span className="name">{CHECK_LABELS[c.field] ?? c.field}</span>
+                  <span className="name">{checkLabel(c.field)}</span>
                   {c.message && <span className="msg"> — {c.message}</span>}
                 </span>
               </li>

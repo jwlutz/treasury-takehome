@@ -78,9 +78,9 @@ brand, class/type, abv, net contents, bottler name+addr, country of origin (impo
 - [x] single-label page: drag-drop/browse upload, app-values form, big 3-state result + reasons
 - [x] /api/verify: key stays server-side, nothing written to disk
 - [x] try an example: one of each outcome, no upload needed
-- [ ] batch: many files / csv manifest -> results table + status line
-- [ ] review dashboard + role switch (agent queue / supervisor metrics)
-- [ ] risk-coverage curve (the differentiator)
+- [x] batch: csv manifest + images -> bounded-concurrency run, live status line, sortable table (quote-aware csv + 5 tests)
+- [x] review dashboard + role switch: supervisor metrics / agent queue with clear-or-reject override
+- [ ] risk-coverage curve
 - [ ] accessibility pass: keyboard + screen reader + contrast audit
 - [ ] readme (setup, approach, tradeoffs) + deploy to vercel
 - [ ] stretch: golden test set page, generate + test match/mismatch buttons
