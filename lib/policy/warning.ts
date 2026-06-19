@@ -7,6 +7,10 @@ import { foldCase } from './normalize';
 export const CANONICAL_WARNING =
   'GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.';
 
+// the statement minus the header, so the body compare works whether or not the model
+// repeated "GOVERNMENT WARNING:" inside `text` (it often splits it into header_text).
+const CANONICAL_BODY = CANONICAL_WARNING.replace(/^GOVERNMENT WARNING:\s*/, '');
+
 const ok = (field: string): FieldCheck => ({ field, status: 'pass', severity: 'ok', message: '' });
 const warn = (field: string, message: string): FieldCheck => ({ field, status: 'fail', severity: 'warning', message });
 const err = (field: string, message: string): FieldCheck => ({ field, status: 'fail', severity: 'error', message });
@@ -29,8 +33,9 @@ function content(w: WarningEvidence, extra: FieldEvidence): FieldCheck {
   const caps = w.header_all_caps ?? (w.header_text ? w.header_text === w.header_text.toUpperCase() && /[A-Z]/.test(w.header_text) : null);
   if (caps === false) return err(field, `header "${w.header_text ?? ''}" is not in all caps`);
 
-  // verbatim text (case-insensitive but punctuation/word exact)
-  if (foldCase(t) !== foldCase(CANONICAL_WARNING)) {
+  // verbatim body (case-insensitive, punctuation/word exact); strip a leading header first
+  const body = t.replace(/^\s*government\s+warning\s*:?\s*/i, '');
+  if (foldCase(body) !== foldCase(CANONICAL_BODY)) {
     return err(field, 'warning text does not match the required statement verbatim');
   }
 
