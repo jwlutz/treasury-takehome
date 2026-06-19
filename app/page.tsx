@@ -93,20 +93,12 @@ export default function Home() {
   const [app, setApp] = useState<ApplicationFields>(EMPTY);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
-  const [examples, setExamples] = useState<Example[]>([]);
   const [result, setResult] = useState<VerifyResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const [generated, setGenerated] = useState<{ note: string; expected: 'approve' | 'reject' } | null>(null);
   const resultRef = useRef<HTMLHeadingElement>(null);
-
-  useEffect(() => {
-    fetch('/api/examples')
-      .then((r) => r.json())
-      .then((d) => setExamples(d.examples ?? []))
-      .catch(() => {});
-  }, []);
 
   // move focus to the result so screen readers and keyboard users land on the outcome
   useEffect(() => {
@@ -144,6 +136,19 @@ export default function Home() {
     const f = await dataUrlToFile(ex.image, `${ex.id}.${ex.mime.split('/')[1] ?? 'jpg'}`);
     setFile(f);
     setPreview(ex.image);
+  }
+
+  // pull a *random* label from the bank for this outcome, so "try an example" isn't the same one twice
+  async function loadRandomExample(category: 'compliant' | 'noncompliant' | 'unclear') {
+    setError('');
+    try {
+      const res = await fetch(`/api/examples?category=${category}`);
+      const data = await res.json();
+      if (!res.ok || !data.example) throw new Error(data.error ?? 'could not load an example');
+      await loadExample(data.example);
+    } catch (err: any) {
+      setError(err?.message ?? 'could not load an example');
+    }
   }
 
   async function runVerify(f: File, a: ApplicationFields) {
@@ -204,9 +209,9 @@ export default function Home() {
       label: 'Try example',
       dataGuide: 'examples',
       options: [
-        { label: 'Compliant', tone: 'success', disabled: !examples[0], onSelect: () => examples[0] && loadExample(examples[0]) },
-        { label: 'Noncompliant', tone: 'danger', disabled: !examples[1], onSelect: () => examples[1] && loadExample(examples[1]) },
-        { label: 'Unclear photo', tone: 'warning', disabled: !examples[2], onSelect: () => examples[2] && loadExample(examples[2]) },
+        { label: 'Compliant', tone: 'success', onSelect: () => loadRandomExample('compliant') },
+        { label: 'Noncompliant', tone: 'danger', onSelect: () => loadRandomExample('noncompliant') },
+        { label: 'Unclear photo', tone: 'warning', onSelect: () => loadRandomExample('unclear') },
       ],
     },
     {
@@ -243,36 +248,89 @@ export default function Home() {
           <RadialMenu items={radialItems} />
         </aside>
 
-        <section
-          className={`stage${dragOver ? ' over' : ''}`}
-          data-guide="upload"
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragOver(false);
-            takeFile(e.dataTransfer.files?.[0] ?? null);
-          }}
-        >
-          {preview ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="stage-img" src={preview} alt="label preview" />
-              <button type="button" className="stage-replace" onClick={clearAll}>
-                Replace
-              </button>
-            </>
-          ) : (
-            <label className="drop">
-              <b>Drop a label photo here</b>
-              <small>or choose a file · paste · this becomes the image once loaded</small>
-              <input className="visually-hidden" type="file" accept="image/*" onChange={(e) => takeFile(e.target.files?.[0] ?? null)} />
-            </label>
+        {/* middle column: the image, then the result right under it (not full-width at the page foot) */}
+        <div className="stage-col">
+          <section
+            className={`stage${dragOver ? ' over' : ''}`}
+            data-guide="upload"
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              takeFile(e.dataTransfer.files?.[0] ?? null);
+            }}
+          >
+            {preview ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="stage-img" src={preview} alt="label preview" />
+                <button type="button" className="stage-replace" onClick={clearAll}>
+                  Replace
+                </button>
+              </>
+            ) : (
+              <label className="drop">
+                <b>Drop a label photo here</b>
+                <small>or choose a file · paste · this becomes the image once loaded</small>
+                <input className="visually-hidden" type="file" accept="image/*" onChange={(e) => takeFile(e.target.files?.[0] ?? null)} />
+              </label>
+            )}
+          </section>
+
+          {error && (
+            <div className="alert" role="alert">
+              {error}
+            </div>
           )}
-        </section>
+
+          {result && (
+            <section aria-live="polite" data-guide="result" className="result-section">
+              <h2>Result</h2>
+              <div className={`banner ${DECISION[result.decision].tone}`}>
+                <span className="mark" aria-hidden="true">
+                  {DECISION[result.decision].mark}
+                </span>
+                <div>
+                  <h3 tabIndex={-1} ref={resultRef}>
+                    {DECISION[result.decision].label}
+                  </h3>
+                  <p>{DECISION[result.decision].blurb}</p>
+                </div>
+              </div>
+
+              <p className="meta">
+                checked in {(result.latencyMs / 1000).toFixed(1)}s
+                {result.confidence != null && <> · read confidence {(result.confidence * 100).toFixed(0)}%</>}
+                {!result.quality.ok && <> · image quality flagged</>}
+              </p>
+
+              {generated && (
+                <div className={`gen-note ${result.decision === generated.expected ? 'ok' : 'bad'}`}>
+                  Generated test. {generated.note}. Expected to {generated.expected}; got {result.decision}
+                  {result.decision === generated.expected ? ' ✓' : ' ✗'}
+                </div>
+              )}
+
+              <ul className="checks">
+                {result.checks.map((c) => (
+                  <li key={c.field} className={`sev-${c.severity}`}>
+                    <span className="mark" aria-hidden="true">
+                      {SEV_MARK[c.severity] ?? '•'}
+                    </span>
+                    <span>
+                      <span className="name">{checkLabel(c.field)}</span>
+                      {c.message && <span className="msg"> — {c.message}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
 
         <form className="fields" onSubmit={submit}>
           <fieldset>
@@ -307,56 +365,6 @@ export default function Home() {
           </div>
         </form>
       </div>
-
-      {error && (
-        <div className="alert" role="alert">
-          {error}
-        </div>
-      )}
-
-      {result && (
-        <section aria-live="polite" data-guide="result" className="result-section">
-          <h2>Result</h2>
-          <div className={`banner ${DECISION[result.decision].tone}`}>
-            <span className="mark" aria-hidden="true">
-              {DECISION[result.decision].mark}
-            </span>
-            <div>
-              <h3 tabIndex={-1} ref={resultRef}>
-                {DECISION[result.decision].label}
-              </h3>
-              <p>{DECISION[result.decision].blurb}</p>
-            </div>
-          </div>
-
-          <p className="meta">
-            checked in {(result.latencyMs / 1000).toFixed(1)}s
-            {result.confidence != null && <> · read confidence {(result.confidence * 100).toFixed(0)}%</>}
-            {!result.quality.ok && <> · image quality flagged</>}
-          </p>
-
-          {generated && (
-            <div className={`gen-note ${result.decision === generated.expected ? 'ok' : 'bad'}`}>
-              Generated test. {generated.note}. Expected to {generated.expected}; got {result.decision}
-              {result.decision === generated.expected ? ' ✓' : ' ✗'}
-            </div>
-          )}
-
-          <ul className="checks">
-            {result.checks.map((c) => (
-              <li key={c.field} className={`sev-${c.severity}`}>
-                <span className="mark" aria-hidden="true">
-                  {SEV_MARK[c.severity] ?? '•'}
-                </span>
-                <span>
-                  <span className="name">{checkLabel(c.field)}</span>
-                  {c.message && <span className="msg"> — {c.message}</span>}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </main>
   );
 }

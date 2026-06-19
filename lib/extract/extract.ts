@@ -19,7 +19,7 @@ Rules:
 - value = the cleaned value (strip captions like "Net Contents:" or lead-ins like "Produced and bottled by"). evidence_text = the exact surrounding printed phrase, character-for-character.
 - Set value only when it is visibly and confidently readable.
 - If a field is absent from this image, set visible=false and value=null. Do NOT treat absence from one photo as noncompliance.
-- If a field is present but degraded by glare, blur, crop, skew, or low contrast, set visible=true, legible=false, and value=null unless every character is clear.
+- If a field is degraded by glare, blur, crop, skew, or low contrast but you can still read every character with confidence, record the value and set legible=false. Set value=null only when you genuinely cannot make out the text. Never guess a character.
 - location_note: where it appears (front label, back, neck, partly cropped, etc.).
 - government_warning: transcribe the full visible warning into text, including the header exactly as printed. Record header_text (exact, preserve its capitalization), header_all_caps, header_bold (visibly heavier weight), separate_from_other_text, and contrast_issue.
 - extra_statement: a standalone statement near the mandatory info (e.g. CONTAINS SULFITES); visible=false / value=null if none.

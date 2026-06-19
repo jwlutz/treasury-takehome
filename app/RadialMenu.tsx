@@ -25,7 +25,7 @@ export interface RadialItem {
 // compliant up-right, noncompliant straight, unclear down-right. it stays open until you pick
 // one or click away (no close-on-leave, or the choices would vanish before you reach them).
 const ANGLES = [45, 0, -45];
-const RADIUS = 130;
+const RADIUS = 195;
 
 export default function RadialMenu({ items }: { items: RadialItem[] }) {
   const [open, setOpen] = useState<string | null>(null);

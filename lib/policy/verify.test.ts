@@ -149,15 +149,23 @@ describe('decision engine rules', () => {
     expect(statusOf(r, 'producer_address')).toBe('fail');
   });
 
-  it('field visible but not legible -> needs review', () => {
+  it('field present but unreadable (no value) -> needs review', () => {
     const r = verify(APP, ev({ alcohol_content: fe(null, { visible: true, legible: false }) }));
     expect(r.decision).toBe('needs_review');
     expect(statusOf(r, 'alcohol_content')).toBe('fail');
   });
 
-  it('warning contrast issue -> needs review', () => {
+  it('field read off an imperfect photo (value present, legible=false) -> compared, not reviewed', () => {
+    // if the model could still make out the value, glare/softness alone must not pull it to a human
+    const r = verify(APP, ev({ alcohol_content: fe(APP.alcohol_content, { legible: false }) }));
+    expect(r.decision).toBe('approve');
+    expect(statusOf(r, 'alcohol_content')).toBe('pass');
+  });
+
+  it('warning contrast flag alone -> approve with a note, not review (readable warning)', () => {
     const r = verify(APP, ev({ government_warning: warningEv({ contrast_issue: true }) }));
-    expect(r.decision).toBe('needs_review');
+    expect(r.decision).toBe('approve');
+    expect(statusOf(r, 'government_warning_format')).toBe('pass_with_note');
   });
 
   it('failed image-quality gate -> needs review (ALBV-011 / ALBV-024)', () => {

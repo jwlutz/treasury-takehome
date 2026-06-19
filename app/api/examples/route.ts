@@ -1,10 +1,23 @@
-import { NextResponse } from 'next/server';
-import { loadExamples } from '../../../lib/examples';
+import { NextRequest, NextResponse } from 'next/server';
+import { loadExamples, randomExample, type ExampleCategory } from '../../../lib/examples';
 
 export const runtime = 'nodejs';
 
-export function GET() {
+const VALID: ExampleCategory[] = ['compliant', 'noncompliant', 'unclear', 'real'];
+
+// GET ?category=compliant|noncompliant|unclear|real -> one random example from that bucket.
+// GET with no category -> one of each disposition (the legacy demo set).
+export function GET(req: NextRequest) {
   try {
+    const cat = req.nextUrl.searchParams.get('category');
+    if (cat) {
+      if (!VALID.includes(cat as ExampleCategory)) {
+        return NextResponse.json({ error: `unknown category "${cat}"` }, { status: 400 });
+      }
+      const example = randomExample(cat as ExampleCategory);
+      if (!example) return NextResponse.json({ error: `no examples for "${cat}"` }, { status: 404 });
+      return NextResponse.json({ example });
+    }
     return NextResponse.json({ examples: loadExamples() });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message ?? 'could not load examples' }, { status: 500 });

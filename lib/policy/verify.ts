@@ -45,16 +45,18 @@ function parseProof(s: string): number | null {
 }
 
 // legibility + absence handling shared by every data field. returns a check to short-circuit,
-// or null when the field is present + legible and the caller should compare the value.
-// field-aware absence: only the warning is a hard reject when missing (handled in warning.ts);
-// every other field "not visible in this photo" -> needs_review (may be on another panel / embossed).
+// or null when there is a value and the caller should compare it.
+// review is only for what the model genuinely could not read: a confident value (even off a
+// glared or imperfect photo) means it could still make the distinction, so we compare it rather
+// than punting to a human. only a missing value routes a required field to review. absence is
+// field-aware: the warning is a hard reject when truly absent (warning.ts); every other field
+// "not visible in this photo" -> review (may be on another panel / embossed). the deterministic
+// blur/contrast gate (lib/quality) is the separate safety net for genuinely unreadable images.
 function gate(field: string, ev: FieldEvidence, required: boolean): FieldCheck | null {
-  if (ev.visible && !ev.legible) return warn(field, 'visible but not clearly legible; needs a human look');
-  if (!ev.visible || !ev.value || !ev.value.trim()) {
-    if (!required) return ok(field);
-    return warn(field, 'not visible in this image (may be on another panel or embossed)');
-  }
-  return null;
+  if (ev.value && ev.value.trim()) return null; // got a value -> compare it, glare or not
+  if (!required) return ok(field);
+  if (ev.visible) return warn(field, 'present but not legible in this image; needs a human look');
+  return warn(field, 'not visible in this image (may be on another panel or embossed)');
 }
 
 export function checkBrand(app: string, ev: FieldEvidence): FieldCheck {

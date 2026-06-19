@@ -262,6 +262,13 @@ main {
   margin: 0;
 }
 
+/* middle column: image on top, result stacked right beneath it (constrained to this column's width) */
+.stage-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .result-section {
   margin-top: 1.75rem;
 }

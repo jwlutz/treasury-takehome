@@ -12,6 +12,7 @@ export const CANONICAL_WARNING =
 const CANONICAL_BODY = CANONICAL_WARNING.replace(/^GOVERNMENT WARNING:\s*/, '');
 
 const ok = (field: string): FieldCheck => ({ field, status: 'pass', severity: 'ok', message: '' });
+const note = (field: string, message: string): FieldCheck => ({ field, status: 'pass_with_note', severity: 'note', message });
 const warn = (field: string, message: string): FieldCheck => ({ field, status: 'fail', severity: 'warning', message });
 const err = (field: string, message: string): FieldCheck => ({ field, status: 'fail', severity: 'error', message });
 
@@ -26,8 +27,11 @@ export function checkWarning(w: WarningEvidence, extra: FieldEvidence): [FieldCh
 function content(w: WarningEvidence, extra: FieldEvidence): FieldCheck {
   const field = 'government_warning';
   const t = (w.text ?? '').trim();
-  if (!w.visible || !t) return err(field, 'required health warning is not visible on the label');
-  if (!w.legible) return warn(field, 'warning is visible but not clearly legible');
+  // two kinds of blank: truly absent -> reject; present but unreadable -> human review (not a reject).
+  // if the text was read at all (even off a glared photo), we judge it; legibility alone no longer
+  // pulls a readable, verbatim warning into the review queue.
+  if (!w.visible) return err(field, 'required health warning is not on the label');
+  if (!t) return warn(field, 'warning is present but could not be read; needs a human look');
 
   // header casing (the body fold-compare can't catch it, since it lowercases everything)
   const caps = w.header_all_caps ?? (w.header_text ? w.header_text === w.header_text.toUpperCase() && /[A-Z]/.test(w.header_text) : null);
@@ -51,7 +55,9 @@ function format(w: WarningEvidence): FieldCheck {
   if (!w.visible || !(w.text ?? '').trim()) return ok(field); // absence handled by content
   if (w.header_bold === false) return err(field, 'the GOVERNMENT WARNING header is not bold');
   if (w.separate_from_other_text === false) return err(field, 'the warning is not separate/apart from other text');
-  if (w.contrast_issue === true) return warn(field, 'warning contrast may be too low; needs a human look');
+  // contrast is a soft perceptual call. if the warning was read fine, a borderline-contrast flag
+  // shouldn't pull a clean label into the review queue -> record it as a note, don't escalate.
+  if (w.contrast_issue === true) return note(field, 'warning contrast looks borderline (text was readable)');
   return ok(field);
 }
 
