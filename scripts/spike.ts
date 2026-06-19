@@ -12,7 +12,7 @@ for (const line of readFileSync(join(process.cwd(), '.env'), 'utf8').split('\n')
   if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
 }
 
-const MODEL = process.env.MODEL ?? 'gpt-4o-mini';
+const MODEL = process.env.MODEL ?? 'gpt-5.4-mini';
 const DETAIL = (process.env.DETAIL ?? 'high') as 'high' | 'auto' | 'low';
 const PER = Number(process.env.PER ?? 2); // images per ai_ bucket
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -39,6 +39,7 @@ const SYSTEM = `You read U.S. alcohol beverage labels for TTB compliance. You ar
 Rules:
 - Copy text verbatim: keep capitalization, punctuation, spacing and symbols (e.g. "45% Alc./Vol."). Do not normalize, fix spelling, expand abbreviations, or infer.
 - If a field is not visibly printed on the label, return null. Never guess it from the brand or product type.
+- Extract the VALUE only, not the field's printed caption/lead-in. e.g. "Net Contents: 750 mL" -> "750 mL"; "Country of Origin: United States" -> "United States"; "Produced and bottled by Acme Co." -> "Acme Co." Keep the value itself verbatim (do not change "45% Alc./Vol."). This does NOT apply to government_warning_text, which must include its full "GOVERNMENT WARNING:" header.
 - government_warning_text: transcribe the entire Government Warning verbatim. Reproduce the header's capitalization EXACTLY as printed: if it shows "Government Warning" or any non-uppercase form, copy it that way and do NOT change it to "GOVERNMENT WARNING". The exact casing and punctuation are compliance signals, so copy them character-for-character. Transcribe what is printed, never what you expect. null if no warning is shown.
 - government_warning_header_bold: true only if the "GOVERNMENT WARNING" header is visibly bolder/heavier than the text after it.
 - extra_statement: any extra standalone statement near the warning (e.g. "CONTAINS SULFITES"); "" if none.
