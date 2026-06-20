@@ -11,7 +11,6 @@ import RadialMenu, { type RadialItem } from './RadialMenu';
 interface VerifyResponse {
   decision: Decision;
   checks: FieldCheck[];
-  quality: { ok: boolean; reasons: string[] };
   latencyMs: number;
   confidence: number | null;
 }

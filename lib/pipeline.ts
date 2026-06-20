@@ -1,34 +1,29 @@
 // the verification pipeline the api route calls: one image + the application -> a decision.
-// extraction (the model) and image quality (deterministic, sharp) run in parallel. verify() decides
-// purely on the reads; the quality score is advisory metadata only (it never routes, per policy:
-// a usable photo isn't a problem just because it's soft/glary, and an unreadable field already
-// routes to review on its own).
+// the model extracts; verify() decides on the reads. image quality is intentionally NOT part of the
+// path: a usable photo isn't a problem unless it costs a read, which already shows up as an empty
+// field that routes to review. (the deterministic blur/contrast helper in lib/quality is kept as a
+// dev/calibration utility only; it's deliberately not imported here so the serverless function stays
+// lean and free of the native sharp binary.)
 import { verify } from './policy';
-import type { ApplicationFields, EvidenceRecord, ImageQuality, VerificationResult } from './policy/types';
+import type { ApplicationFields, EvidenceRecord, VerificationResult } from './policy/types';
 import { extractLabelEvidence } from './extract/extract';
-import { assessImageQuality } from './quality/imageQuality';
 
 export interface VerifyImageResult {
   decision: VerificationResult['decision'];
   checks: VerificationResult['checks'];
   evidence: EvidenceRecord;
-  quality: ImageQuality;
   latencyMs: number;
   confidence: number | null; // mean token probability from logprobs, for the operating-point work later
   tokens: number; // total tokens for this verification (usage meter)
 }
 
 export async function verifyImage(image: Buffer, app: ApplicationFields, mime = 'image/jpeg'): Promise<VerifyImageResult> {
-  const [extracted, quality] = await Promise.all([
-    extractLabelEvidence(image, mime),
-    assessImageQuality(image),
-  ]);
+  const extracted = await extractLabelEvidence(image, mime);
   const result = verify(app, extracted.evidence);
   return {
     decision: result.decision,
     checks: result.checks,
     evidence: extracted.evidence,
-    quality: { ok: quality.ok, reasons: quality.reasons },
     latencyMs: extracted.latencyMs,
     confidence: extracted.confidence,
     tokens: extracted.tokens,

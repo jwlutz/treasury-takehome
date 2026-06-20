@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyImage } from '../../../lib/pipeline';
 import type { ApplicationFields } from '../../../lib/policy/types';
 
-export const runtime = 'nodejs'; // sharp + the openai sdk need node, not the edge runtime
+export const runtime = 'nodejs'; // the openai sdk needs node, not the edge runtime
 export const maxDuration = 30; // headroom over the 5s target
 
 const REQUIRED: (keyof ApplicationFields)[] = [
