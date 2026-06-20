@@ -19,11 +19,12 @@ brand, class/type, abv, net contents, bottler name+addr, country of origin (impo
 - use structured outputs
 
 ## confidence / routing
-- not just "rate confidence 1-10"
-- blend: agreement across a couple samples + did it actually quote the text off the label + the cross-checks
-- cascade: one fast pass, only escalate the unsure ones -> stays under 5s
-- cutoff comes from data, not a vibes 90%
-- skip logprobs, skip multi-model council (correlated errors, not mathematically worth it)
+- logprobs give a per-read confidence from the one call we already make (flipped the original "skip logprobs": cheaper than sampling N times for agreement, which would blow 5s)
+- quoting the text off the label + the cross-checks feed in too
+- still skip the multi-model council (correlated errors, not worth the cost)
+- routing today is rules + the quality gate; confidence is shown but doesn't auto-route yet
+- cutoff comes from data, not a vibes 90% -> the risk-coverage curve (next to build)
+- single pass is already <5s so no cascade needed yet
 
 ## batch
 - many files / folder + csv manifest (filename → expected values)
@@ -31,23 +32,23 @@ brand, class/type, abv, net contents, bottler name+addr, country of origin (impo
 - parallelize for batches?
 
 ## usability
-- big browse button AND drag-drop, paste, photo
+- big browse button AND drag & drop, paste, photo
 - "try an example" so you don't have to upload anything to see it work
 - minimal typing, plain words, big + high contrast
 - result is obvious: big green/amber/red + the reason
 
 ## differentiator
-- risk-coverage curve → "to keep false-clears under 1% we auto-clear X%". bounds the scary error, puts a number on sarah's "drowning in routine"
+- risk-coverage curve -> "to keep false-clears under 1% we auto-clear X%". bounds the scary error, puts a number on sarah's "drowning in routine"
 
 ## test data
 - generate labels myself + write the expected values (own both sides)
-- ~30-50, on-purpose edge cases: clean, abv off, title-case warning, missing warning, glare→review, STONE'S THROW, proof≠2×abv
+- ~30-50, on-purpose edge cases: clean, abv off, title-case warning, missing warning, glare→review, STONE'S THROW, proof != 2×abv
 - doubles as the risk-coverage set
 
 ## stretch
 - golden test set page on the site, live dispositions + running accuracy
 - "generate & test match / mismatch" buttons
-  - svg/html template → png, NOT diffusion (garbles text + needs blocked outbound). mismatch = perturb one field
+  - svg/html template -> png, NOT diffusion (garbles text + needs blocked outbound). mismatch = perturb one field
 - glare/angle photo demo maybe
 - accessibility mode on by default:
   - chatbot that will highlight buttons and explain processes
@@ -90,6 +91,8 @@ brand, class/type, abv, net contents, bottler name+addr, country of origin (impo
 - [ ] risk-coverage curve
 - [ ] accessibility pass: keyboard + screen reader + contrast audit
 - [ ] readme (setup, approach, tradeoffs) + deploy to vercel
-- [x] generate & test: render a label (compliant / noncompliant / random) -> svg to png -> verify live, expected vs got (+ 9 tests)
+- [x] generate & test: live image-gen (gpt-image-1, portrait) of a compliant/noncompliant/random label -> verify live, expected vs got; offline svg template as the fallback when the image model is unavailable (+ 9 tests). caveat: the image model garbles exact numbers + the verbatim govt warning, so a "compliant" gen often still rejects -> it's an honest stress test of the verifier, not a guaranteed-pass. composite (photoreal bg + crisp text overlay) would make compliant gens reliable if we want that.
+- [x] review only when the model genuinely can't read it: a confident value (even off a glared/soft photo) is compared, not punted; warning contrast is a note, not a trigger; the deterministic blur/contrast gate stays the safety net for unreadable images. test set re-curated to match (AI-REVIEW-001/003/005 -> compliant; 002/004 stay needs_review)
+- [x] try-example randomizes from the full bank (~35 labels) by outcome bucket instead of a fixed pick; result renders under the image, not full-width
 - [ ] stretch: golden test set page with running accuracy
 

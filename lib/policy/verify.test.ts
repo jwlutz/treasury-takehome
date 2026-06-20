@@ -87,9 +87,9 @@ describe('decision engine rules', () => {
     expect(verify(APP, ev({ net_contents: fe('700 mL') })).decision).toBe('reject');
   });
 
-  it('net contents not visible -> needs review, not reject (embossable, ALBV-023 field-aware)', () => {
+  it('net contents truly absent -> reject (required element missing, ALBV-023)', () => {
     const r = verify(APP, ev({ net_contents: fe(null) }));
-    expect(r.decision).toBe('needs_review');
+    expect(r.decision).toBe('reject');
     expect(statusOf(r, 'net_contents')).toBe('fail');
   });
 
@@ -97,9 +97,9 @@ describe('decision engine rules', () => {
     expect(verify(appWith({ class_type: 'Gin' }), ev({ class_type: fe('Vodka') })).decision).toBe('reject');
   });
 
-  it('imported product, country not visible -> needs review, not reject (field-aware, ALBV-009)', () => {
+  it('imported product, country absent -> reject (required for imports, ALBV-009)', () => {
     const r = verify(appWith({ country_of_origin: 'Mexico' }), ev({ country_of_origin: fe(null) }));
-    expect(r.decision).toBe('needs_review');
+    expect(r.decision).toBe('reject');
   });
 
   it('missing government warning -> reject (must be on the label, ALBV-004)', () => {
@@ -162,19 +162,10 @@ describe('decision engine rules', () => {
     expect(statusOf(r, 'alcohol_content')).toBe('pass');
   });
 
-  it('warning contrast flag alone -> approve with a note, not review (readable warning)', () => {
+  it('warning contrast flag alone -> approve, not pointed out (readable warning)', () => {
+    // image quality (incl. low warning contrast) never routes when the text was read fine
     const r = verify(APP, ev({ government_warning: warningEv({ contrast_issue: true }) }));
     expect(r.decision).toBe('approve');
-    expect(statusOf(r, 'government_warning_format')).toBe('pass_with_note');
-  });
-
-  it('failed image-quality gate -> needs review (ALBV-011 / ALBV-024)', () => {
-    expect(verify(APP, ev(), { ok: false, reasons: ['too blurry'] }).decision).toBe('needs_review');
-  });
-
-  it('illegible image caps at needs review, never reject on unreliable reads', () => {
-    // missing warning would normally reject, but a failed gate means the read is untrustworthy
-    const r = verify(APP, ev({ government_warning: warningEv({ text: null, visible: false }) }), { ok: false, reasons: ['too blurry'] });
-    expect(r.decision).toBe('needs_review');
+    expect(statusOf(r, 'government_warning_format')).toBe('pass');
   });
 });

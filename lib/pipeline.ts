@@ -1,6 +1,8 @@
 // the verification pipeline the api route calls: one image + the application -> a decision.
-// extraction (the model) and image quality (deterministic, sharp) run in parallel; verify() decides.
-// kept separate from the route so batch can reuse it later.
+// extraction (the model) and image quality (deterministic, sharp) run in parallel. verify() decides
+// purely on the reads; the quality score is advisory metadata only (it never routes, per policy:
+// a usable photo isn't a problem just because it's soft/glary, and an unreadable field already
+// routes to review on its own).
 import { verify } from './policy';
 import type { ApplicationFields, EvidenceRecord, ImageQuality, VerificationResult } from './policy/types';
 import { extractLabelEvidence } from './extract/extract';
@@ -21,7 +23,7 @@ export async function verifyImage(image: Buffer, app: ApplicationFields, mime = 
     extractLabelEvidence(image, mime),
     assessImageQuality(image),
   ]);
-  const result = verify(app, extracted.evidence, quality);
+  const result = verify(app, extracted.evidence);
   return {
     decision: result.decision,
     checks: result.checks,

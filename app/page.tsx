@@ -181,16 +181,34 @@ export default function Home() {
     runVerify(file, app);
   }
 
-  // generate a fresh label image from an image model, then run it straight through the verifier.
-  // we own both sides (the label spec + the application values) so the expected outcome is known and
-  // shown next to the result. if the image model is unavailable (e.g. blocked outbound in prod), fall
-  // back to the offline svg template so the feature still works.
-  async function generateAndRun(scenario: Scenario) {
-    setError('');
-    setResult(null);
-    setGenerated(null);
-    const g = generate(scenario);
-    setGenStatus('Generating a label image from the model… this can take ~20s');
+  // "generate a test" runs a label through the verifier and shows expected-vs-got.
+  // compliant leans on an ACTUAL label from the bank: correct text -> reliably approves. live image-gen
+  // garbles exact numbers + the verbatim warning, so it can't be trusted to produce a clean pass.
+  async function loadCompliantFromBank() {
+    setGenStatus('Loading a real compliant label…');
+    try {
+      const res = await fetch('/api/examples?category=compliant');
+      const data = await res.json();
+      if (!res.ok || !data.example) throw new Error(data.error ?? 'could not load a compliant label');
+      const ex = data.example;
+      const f = await dataUrlToFile(ex.image, `${ex.id}.${ex.mime.split('/')[1] ?? 'jpg'}`);
+      setApp(ex.application);
+      setFile(f);
+      setPreview(ex.image);
+      setGenerated({ note: 'a real compliant label from the bank', expected: 'approve' });
+      setGenStatus('');
+      await runVerify(f, ex.application);
+    } catch (err: any) {
+      setGenStatus('');
+      setError(err?.message ?? 'could not load a compliant label');
+    }
+  }
+
+  // noncompliant generates a fresh flawed label from the image model (it should reject either way, so
+  // text garble is harmless here). offline svg template as the fallback when the model is unavailable.
+  async function generateNoncompliant() {
+    const g = generate('noncompliant');
+    setGenStatus('Generating a label image from the model… this usually takes 30–45s');
     try {
       let f: File;
       let fellBack = false;
@@ -210,7 +228,7 @@ export default function Home() {
       setApp(g.application);
       setFile(f);
       setPreview(URL.createObjectURL(f));
-      setGenerated({ note: fellBack ? `${g.note} (image model unavailable — used the offline template)` : g.note, expected: g.expected });
+      setGenerated({ note: fellBack ? `${g.note} (image model unavailable, used the offline template)` : g.note, expected: g.expected });
       recordUsage({ images: 1 });
       setGenStatus('');
       await runVerify(f, g.application);
@@ -218,6 +236,16 @@ export default function Home() {
       setGenStatus('');
       setError(err?.message ?? 'could not generate a label');
     }
+  }
+
+  // compliant -> real bank label; noncompliant -> live image-gen; random -> a coin flip between them.
+  async function generateAndRun(scenario: Scenario) {
+    setError('');
+    setResult(null);
+    setGenerated(null);
+    const compliant = scenario === 'compliant' || (scenario === 'random' && Math.random() < 0.5);
+    if (compliant) await loadCompliantFromBank();
+    else await generateNoncompliant();
   }
 
   function clearAll() {
@@ -332,7 +360,6 @@ export default function Home() {
               <p className="meta">
                 checked in {(result.latencyMs / 1000).toFixed(1)}s
                 {result.confidence != null && <> · read confidence {(result.confidence * 100).toFixed(0)}%</>}
-                {!result.quality.ok && <> · image quality flagged</>}
               </p>
 
               {generated && (

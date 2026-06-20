@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 // e2e specs are named *.e2e.ts so vitest (which owns *.test.ts) never picks them up.
+// playwright needed so agents can run visual tests to save time.
 export default defineConfig({
   testDir: './e2e',
   testMatch: '**/*.e2e.ts',

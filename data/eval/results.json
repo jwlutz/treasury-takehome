@@ -1,0 +1,282 @@
+{
+  "mode": "model",
+  "n": 24,
+  "accuracy": 22,
+  "logicAccuracy": 22,
+  "reviewRate": 2,
+  "falseClears": [],
+  "falseRejects": [],
+  "avgLatencyMs": 3387,
+  "ranAtMs": 1781916406715,
+  "totalMs": 20900,
+  "results": [
+    {
+      "id": "ALBV-001",
+      "expected": "approve",
+      "deg": "none",
+      "logic": "approve",
+      "got": "approve",
+      "latencyMs": 4518,
+      "confidence": 0.9776178163104392,
+      "reasons": []
+    },
+    {
+      "id": "ALBV-002",
+      "expected": "approve",
+      "deg": "none",
+      "logic": "approve",
+      "got": "approve",
+      "latencyMs": 4497,
+      "confidence": 0.9808936877926859,
+      "reasons": []
+    },
+    {
+      "id": "ALBV-003",
+      "expected": "reject",
+      "deg": "none",
+      "logic": "reject",
+      "got": "reject",
+      "latencyMs": 4897,
+      "confidence": 0.9759402935662868,
+      "reasons": [
+        "alcohol_content:error"
+      ]
+    },
+    {
+      "id": "ALBV-004",
+      "expected": "reject",
+      "deg": "none",
+      "logic": "reject",
+      "got": "reject",
+      "latencyMs": 4493,
+      "confidence": 0.9927776180999722,
+      "reasons": [
+        "government_warning:error"
+      ]
+    },
+    {
+      "id": "ALBV-005",
+      "expected": "reject",
+      "deg": "none",
+      "logic": "reject",
+      "got": "reject",
+      "latencyMs": 3516,
+      "confidence": 0.9662721026274391,
+      "reasons": [
+        "government_warning:error"
+      ]
+    },
+    {
+      "id": "ALBV-006",
+      "expected": "reject",
+      "deg": "none",
+      "logic": "reject",
+      "got": "reject",
+      "latencyMs": 3226,
+      "confidence": 0.9585042702595152,
+      "reasons": [
+        "government_warning:error"
+      ]
+    },
+    {
+      "id": "ALBV-007",
+      "expected": "reject",
+      "deg": "none",
+      "logic": "reject",
+      "got": "reject",
+      "latencyMs": 3202,
+      "confidence": 0.9684721761050602,
+      "reasons": [
+        "government_warning_format:error"
+      ]
+    },
+    {
+      "id": "ALBV-008",
+      "expected": "reject",
+      "deg": "none",
+      "logic": "reject",
+      "got": "reject",
+      "latencyMs": 3052,
+      "confidence": 0.9753329648534098,
+      "reasons": [
+        "net_contents:error"
+      ]
+    },
+    {
+      "id": "ALBV-009",
+      "expected": "reject",
+      "deg": "none",
+      "logic": "reject",
+      "got": "reject",
+      "latencyMs": 3276,
+      "confidence": 0.9562670749399632,
+      "reasons": [
+        "country_of_origin:error"
+      ]
+    },
+    {
+      "id": "ALBV-010",
+      "expected": "approve",
+      "deg": "none",
+      "logic": "approve",
+      "got": "approve",
+      "latencyMs": 3044,
+      "confidence": 0.9754821711522341,
+      "reasons": []
+    },
+    {
+      "id": "ALBV-011",
+      "expected": "needs_review",
+      "deg": "glare",
+      "logic": "approve",
+      "got": "approve",
+      "latencyMs": 2932,
+      "confidence": 0.9929169414161534,
+      "reasons": []
+    },
+    {
+      "id": "ALBV-012",
+      "expected": "needs_review",
+      "deg": "none",
+      "logic": "needs_review",
+      "got": "needs_review",
+      "latencyMs": 2913,
+      "confidence": 0.9937906145522579,
+      "reasons": [
+        "producer_address:warning"
+      ]
+    },
+    {
+      "id": "ALBV-013",
+      "expected": "approve",
+      "deg": "none",
+      "logic": "approve",
+      "got": "approve",
+      "latencyMs": 3005,
+      "confidence": 0.9834437126307437,
+      "reasons": []
+    },
+    {
+      "id": "ALBV-014",
+      "expected": "reject",
+      "deg": "none",
+      "logic": "reject",
+      "got": "reject",
+      "latencyMs": 2901,
+      "confidence": 0.9912308658564593,
+      "reasons": [
+        "alcohol_content:error"
+      ]
+    },
+    {
+      "id": "ALBV-015",
+      "expected": "approve",
+      "deg": "none",
+      "logic": "approve",
+      "got": "approve",
+      "latencyMs": 2855,
+      "confidence": 0.9770125702471283,
+      "reasons": []
+    },
+    {
+      "id": "ALBV-016",
+      "expected": "approve",
+      "deg": "none",
+      "logic": "approve",
+      "got": "approve",
+      "latencyMs": 3056,
+      "confidence": 0.9721150056011176,
+      "reasons": []
+    },
+    {
+      "id": "ALBV-017",
+      "expected": "reject",
+      "deg": "none",
+      "logic": "reject",
+      "got": "reject",
+      "latencyMs": 2945,
+      "confidence": 0.9719979403071238,
+      "reasons": [
+        "government_warning:error"
+      ]
+    },
+    {
+      "id": "ALBV-018",
+      "expected": "approve",
+      "deg": "none",
+      "logic": "approve",
+      "got": "approve",
+      "latencyMs": 3487,
+      "confidence": 0.9714715571939746,
+      "reasons": []
+    },
+    {
+      "id": "ALBV-019",
+      "expected": "reject",
+      "deg": "none",
+      "logic": "reject",
+      "got": "reject",
+      "latencyMs": 3052,
+      "confidence": 0.9811891038180363,
+      "reasons": [
+        "government_warning:error"
+      ]
+    },
+    {
+      "id": "ALBV-020",
+      "expected": "reject",
+      "deg": "none",
+      "logic": "reject",
+      "got": "reject",
+      "latencyMs": 3046,
+      "confidence": 0.9891537693557285,
+      "reasons": [
+        "class_type:error"
+      ]
+    },
+    {
+      "id": "ALBV-021",
+      "expected": "needs_review",
+      "deg": "none",
+      "logic": "needs_review",
+      "got": "needs_review",
+      "latencyMs": 3001,
+      "confidence": 0.9865120183820661,
+      "reasons": [
+        "brand_name:warning"
+      ]
+    },
+    {
+      "id": "ALBV-022",
+      "expected": "approve",
+      "deg": "none",
+      "logic": "approve",
+      "got": "approve",
+      "latencyMs": 3192,
+      "confidence": 0.9812707309559464,
+      "reasons": []
+    },
+    {
+      "id": "ALBV-023",
+      "expected": "reject",
+      "deg": "none",
+      "logic": "reject",
+      "got": "reject",
+      "latencyMs": 3558,
+      "confidence": 0.9830703506430168,
+      "reasons": [
+        "net_contents:error"
+      ]
+    },
+    {
+      "id": "ALBV-024",
+      "expected": "needs_review",
+      "deg": "skew",
+      "logic": "approve",
+      "got": "approve",
+      "latencyMs": 3628,
+      "confidence": 0.9686083911396811,
+      "reasons": []
+    }
+  ]
+}

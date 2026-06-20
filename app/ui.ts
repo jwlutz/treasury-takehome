@@ -19,7 +19,6 @@ export const CHECK_LABELS: Record<string, string> = {
   country_of_origin: 'Country of origin',
   government_warning: 'Government warning',
   government_warning_format: 'Warning format',
-  image_quality: 'Image quality',
 };
 
 export const SEV_MARK: Record<string, string> = { error: '✕', warning: '⚠', note: '✓', ok: '✓' };

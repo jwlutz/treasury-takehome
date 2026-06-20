@@ -8,7 +8,6 @@ import type {
   EvidenceRecord,
   FieldCheck,
   FieldEvidence,
-  ImageQuality,
   VerificationResult,
 } from './types';
 import { normalizeText, normalizeProducer, similarity } from './normalize';
@@ -45,18 +44,16 @@ function parseProof(s: string): number | null {
 }
 
 // legibility + absence handling shared by every data field. returns a check to short-circuit,
-// or null when there is a value and the caller should compare it.
-// review is only for what the model genuinely could not read: a confident value (even off a
-// glared or imperfect photo) means it could still make the distinction, so we compare it rather
-// than punting to a human. only a missing value routes a required field to review. absence is
-// field-aware: the warning is a hard reject when truly absent (warning.ts); every other field
-// "not visible in this photo" -> review (may be on another panel / embossed). the deterministic
-// blur/contrast gate (lib/quality) is the separate safety net for genuinely unreadable images.
+// or null when there is a value and the caller should compare it. readability is the model's call:
+// a confident value (even off a glared or soft photo) means it could read it, so we compare rather
+// than punt. image quality never routes on its own; it only matters here, when it actually cost a read.
+// two kinds of blank: visible but unreadable -> can't tell -> review; truly absent -> a required
+// element is missing -> reject (the warning's absence is handled in warning.ts).
 function gate(field: string, ev: FieldEvidence, required: boolean): FieldCheck | null {
   if (ev.value && ev.value.trim()) return null; // got a value -> compare it, glare or not
   if (!required) return ok(field);
   if (ev.visible) return warn(field, 'present but not legible in this image; needs a human look');
-  return warn(field, 'not visible in this image (may be on another panel or embossed)');
+  return err(field, 'required value is not present on the label');
 }
 
 export function checkBrand(app: string, ev: FieldEvidence): FieldCheck {
@@ -119,20 +116,16 @@ export function checkCountry(app: string, ev: FieldEvidence, isImport: boolean):
   return normalizeText(app) === normalizeText(o) ? ok('country_of_origin') : err('country_of_origin', `country of origin mismatch: application "${app}", label "${o}"`);
 }
 
-function imageQualityCheck(iq?: ImageQuality): FieldCheck {
-  if (iq && !iq.ok) return warn('image_quality', iq.reasons.join('; ') || 'image quality may impair reliable reading');
-  return ok('image_quality');
-}
-
-function rollup(checks: FieldCheck[], gateFailed: boolean): Decision {
-  // an untrustworthy image -> never auto-reject/clear on its reads. send to a human.
-  if (gateFailed) return 'needs_review';
+// image quality never routes on its own: a usable photo isn't a problem just because it's soft or
+// has glare. quality only matters when it costs a read, and that already shows up as an unreadable
+// field (gate -> review) above. so the decision is purely the field + warning checks.
+function rollup(checks: FieldCheck[]): Decision {
   if (checks.some((c) => c.severity === 'error')) return 'reject';
   if (checks.some((c) => c.severity === 'warning')) return 'needs_review';
   return 'approve';
 }
 
-export function verify(app: ApplicationFields, ev: EvidenceRecord, imageQuality?: ImageQuality): VerificationResult {
+export function verify(app: ApplicationFields, ev: EvidenceRecord): VerificationResult {
   const isImport = !DOMESTIC.has(normalizeText(app.country_of_origin));
   const [warnContent, warnFormat] = checkWarning(ev.government_warning, ev.extra_statement);
   const checks: FieldCheck[] = [
@@ -145,7 +138,6 @@ export function verify(app: ApplicationFields, ev: EvidenceRecord, imageQuality?
     checkCountry(app.country_of_origin, ev.country_of_origin, isImport),
     warnContent,
     warnFormat,
-    imageQualityCheck(imageQuality),
   ];
-  return { decision: rollup(checks, imageQuality ? !imageQuality.ok : false), checks };
+  return { decision: rollup(checks), checks };
 }

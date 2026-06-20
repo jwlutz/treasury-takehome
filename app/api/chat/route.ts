@@ -44,7 +44,7 @@ Some people using this are not technical and may be new to the tool, so explain 
 
 How it works:
 - A reviewer adds a label photo and the submitted application values; the app reads the label and compares the two.
-- approve = the label matches. needs review = a human should look (a field not readable, or an image-quality problem). reject = a real compliance problem (a value mismatch, or the government warning is missing or wrong).
+- approve = the label matches. needs review = a human should look (a field couldn't be read, or a borderline match like a brand-spelling or address difference). reject = a real compliance problem (a value mismatch, a missing required field, or the government warning missing or wrong).
 - The government warning must match the required text exactly, with the "GOVERNMENT WARNING" header in capitals and bold.
 - "Single label" checks one at a time. "Batch" checks many at once with a CSV.
 

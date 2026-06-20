@@ -12,7 +12,6 @@ export const CANONICAL_WARNING =
 const CANONICAL_BODY = CANONICAL_WARNING.replace(/^GOVERNMENT WARNING:\s*/, '');
 
 const ok = (field: string): FieldCheck => ({ field, status: 'pass', severity: 'ok', message: '' });
-const note = (field: string, message: string): FieldCheck => ({ field, status: 'pass_with_note', severity: 'note', message });
 const warn = (field: string, message: string): FieldCheck => ({ field, status: 'fail', severity: 'warning', message });
 const err = (field: string, message: string): FieldCheck => ({ field, status: 'fail', severity: 'error', message });
 
@@ -55,9 +54,8 @@ function format(w: WarningEvidence): FieldCheck {
   if (!w.visible || !(w.text ?? '').trim()) return ok(field); // absence handled by content
   if (w.header_bold === false) return err(field, 'the GOVERNMENT WARNING header is not bold');
   if (w.separate_from_other_text === false) return err(field, 'the warning is not separate/apart from other text');
-  // contrast is a soft perceptual call. if the warning was read fine, a borderline-contrast flag
-  // shouldn't pull a clean label into the review queue -> record it as a note, don't escalate.
-  if (w.contrast_issue === true) return note(field, 'warning contrast looks borderline (text was readable)');
+  // contrast is an image-quality observation, not a compliance defect. if the warning was readable
+  // (we have its text), low contrast isn't pointed out; an unreadable warning is handled in content().
   return ok(field);
 }
 
