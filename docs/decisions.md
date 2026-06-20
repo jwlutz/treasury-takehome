@@ -19,7 +19,7 @@
 - free cross-check: proof should = 2x abv, catches a garbled number for free
 
 **image-quality gate?**
-- we compute a deterministic blur/contrast score (sharp), but it's advisory only -- it never routes a decision
+- image quality is not in the verify path at all -- it never routes. (a blur/contrast helper exists in lib/quality for dev/calibration, but it's deliberately not imported at runtime, which keeps the serverless function lean and off the native sharp binary that was crashing it)
 - the call: a usable photo isn't a problem just because it's soft or has glare. readability is the model's job. if it can read the value we compare it; if glare/blur actually costs a read, that field comes back empty and routes to review on its own
 - so image quality is never pointed out unless it genuinely blocked a read. tradeoff: no independent pixel backstop, so a confident misread on a degraded photo is the residual risk (mitigated by the cross-checks + logprob confidence)
 

@@ -74,8 +74,8 @@ brand, class/type, abv, net contents, bottler name+addr, country of origin (impo
 
 - [x] decision engine: normalize + warning + verify, beverage + field aware (lib/policy) + 23 tests
 - [x] evidence extraction: gpt-5.4-mini, forced structured output, model only EXTRACTS (lib/extract)
-- [x] image-quality gate: blur + contrast, independent of the model (lib/quality) + 2 tests. advisory only -- never routes; a usable photo isn't a problem unless it actually costs a read (then that field comes back empty and routes on its own)
-- [x] pipeline: extract + gate run in parallel -> verify (lib/pipeline)
+- [x] image-quality helper: blur + contrast (lib/quality) + 2 tests. NOT in the verify path -- image quality never routes (a usable photo is fine; an unreadable field routes on its own). kept as a dev/calibration utility, out of the serverless function (sharp is native and was crashing it at load)
+- [x] pipeline: extract -> verify (lib/pipeline)
 - [x] single-label page: drag-drop/browse upload, app-values form, big 3-state result + reasons
 - [x] /api/verify: key stays server-side, nothing written to disk
 - [x] try an example: one of each outcome, no upload needed
