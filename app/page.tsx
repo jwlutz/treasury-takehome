@@ -97,6 +97,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [wallMs, setWallMs] = useState<number | null>(null); // real round-trip the user feels (>= model latency)
   const [genStatus, setGenStatus] = useState('');
+  const [genMs, setGenMs] = useState(6000); // expected duration for the generate progress bar
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const [generated, setGenerated] = useState<{ note: string; expected: 'approve' | 'reject' } | null>(null);
@@ -189,6 +190,7 @@ export default function Home() {
   // compliant leans on an ACTUAL label from the bank: correct text -> reliably approves. live image-gen
   // garbles exact numbers + the verbatim warning, so it can't be trusted to produce a clean pass.
   async function loadCompliantFromBank() {
+    setGenMs(6000);
     setGenStatus('Loading a real compliant label…');
     try {
       const res = await fetch('/api/examples?category=compliant');
@@ -212,6 +214,7 @@ export default function Home() {
   // text garble is harmless here). offline svg template as the fallback when the model is unavailable.
   async function generateNoncompliant() {
     const g = generate('noncompliant');
+    setGenMs(45000);
     setGenStatus('Generating a label image from the model… this usually takes 30–45s');
     try {
       let f: File;
@@ -320,7 +323,7 @@ export default function Home() {
           >
             {genStatus ? (
               <div className="stage-busy">
-                <ProgressBar label={genStatus} expectedMs={genStatus.includes('Generating a label image') ? 45000 : 6000} />
+                <ProgressBar label={genStatus} expectedMs={genMs} />
               </div>
             ) : preview ? (
               <>

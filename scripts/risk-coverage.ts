@@ -4,35 +4,14 @@
 // coverage (% auto-decided) against the false-clear rate, and picks the operating point for a target.
 //   bun run risk-coverage              # target 1% false clears
 //   TARGET=0.005 bun run risk-coverage # stricter budget
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { ApplicationFields, Decision } from '../lib/policy/types';
+import type { Decision } from '../lib/policy/types';
 import { verifyImage } from '../lib/pipeline';
+import { loadEnv, pool, EVAL_DIR, loadFixtures, appOf, imagePath } from './_shared';
 
-function loadEnv() {
-  const p = join(process.cwd(), '.env');
-  if (!existsSync(p)) return;
-  for (const line of readFileSync(p, 'utf8').split('\n')) {
-    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
-    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
-  }
-}
-
-const DIR = join(process.cwd(), 'data', 'eval');
 const TARGET = Number(process.env.TARGET ?? 0.01);
 const r3 = (x: number) => Math.round(x * 1000) / 1000;
-
-async function pool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): Promise<R[]> {
-  const out: R[] = new Array(items.length);
-  let i = 0;
-  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
-    while (i < items.length) {
-      const idx = i++;
-      out[idx] = await fn(items[idx]);
-    }
-  }));
-  return out;
-}
 
 async function main() {
   loadEnv();
@@ -40,12 +19,11 @@ async function main() {
     console.error('OPENAI_API_KEY not set (the model pass needs it).');
     process.exit(1);
   }
-  const rows = readFileSync(join(DIR, 'ground_truth.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  const rows = loadFixtures();
   console.log(`risk-coverage: ${rows.length} fixtures, target false-clear rate <= ${(TARGET * 100).toFixed(1)}%\n`);
 
   const items = await pool(rows, 4, async (r: any) => {
-    const app: ApplicationFields = { beverage_type: r.beverage_type, ...r.application_fields };
-    const res = await verifyImage(readFileSync(join(DIR, 'images', `${r.id}.png`)), app, 'image/png');
+    const res = await verifyImage(readFileSync(imagePath(r.id)), appOf(r), 'image/png');
     return { id: r.id as string, expected: r.expected_decision as Decision, decision: res.decision, confidence: res.confidence ?? 0 };
   });
 
@@ -84,7 +62,7 @@ async function main() {
     points,
     items: items.map((i) => ({ id: i.id, confidence: r3(i.confidence), decision: i.decision, expected: i.expected })),
   };
-  writeFileSync(join(DIR, 'risk-coverage.json'), JSON.stringify(out, null, 2));
+  writeFileSync(join(EVAL_DIR, 'risk-coverage.json'), JSON.stringify(out, null, 2));
 
   console.log(' confidence bar   coverage   false-clear rate   error rate');
   for (const p of points) {

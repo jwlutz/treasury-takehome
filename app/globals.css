@@ -252,21 +252,6 @@ main {
   border-radius: var(--radius);
 }
 
-.stage-busy .spinner {
-  width: 30px;
-  height: 30px;
-  border: 3px solid var(--line-strong);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .stage-img {
   max-width: 100%;
   max-height: 420px;
@@ -1388,7 +1373,10 @@ button.th {
   width: 8%;
   background: var(--accent);
   border-radius: 999px;
-  animation: weightedfill 5000ms cubic-bezier(0.1, 0.75, 0.2, 1) forwards;
+  animation-name: weightedfill;
+  animation-timing-function: cubic-bezier(0.1, 0.75, 0.2, 1);
+  animation-fill-mode: forwards;
+  /* duration comes only from ProgressBar's inline animationDuration -- single source of truth */
 }
 @keyframes weightedfill {
   from { width: 8%; }
@@ -1437,19 +1425,18 @@ button.th {
   font-size: 0.85rem;
   font-weight: 600;
 }
-.rc-split .auto {
-  background: var(--approve-line);
-  color: var(--approve-ink);
+.rc-split > div {
   display: flex;
   align-items: center;
   padding-left: 0.7rem;
 }
+.rc-split .auto {
+  background: var(--approve-line);
+  color: var(--approve-ink);
+}
 .rc-split .review {
   background: var(--review-line);
   color: var(--review-ink);
-  display: flex;
-  align-items: center;
-  padding-left: 0.7rem;
 }
 .rc-chart {
   margin: 1.75rem 0 1rem;

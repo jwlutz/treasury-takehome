@@ -6,12 +6,9 @@ import { verify, inferBeverage } from '../lib/policy/index';
 import type { ApplicationFields } from '../lib/policy/types';
 import { extractLabelEvidence } from '../lib/extract/extract';
 import { assessImageQuality } from '../lib/quality/imageQuality';
+import { loadEnv } from './_shared';
 
-// load .env (no dep)
-for (const line of readFileSync(join(process.cwd(), '.env'), 'utf8').split('\n')) {
-  const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
-  if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
-}
+loadEnv();
 
 const PER = Number(process.env.PER ?? 2);
 

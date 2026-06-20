@@ -5,6 +5,9 @@ import type { ApplicationFields } from '../../../lib/policy/types';
 export const runtime = 'nodejs'; // the openai sdk needs node, not the edge runtime
 export const maxDuration = 30; // headroom over the 5s target
 
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // bound the upload before we hand it to the vision model
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
 const REQUIRED: (keyof ApplicationFields)[] = [
   'beverage_type',
   'brand_name',
@@ -32,6 +35,12 @@ export async function POST(req: Request) {
   if (!(file instanceof File)) {
     return NextResponse.json({ error: 'no image uploaded' }, { status: 400 });
   }
+  if (file.size > MAX_IMAGE_BYTES) {
+    return NextResponse.json({ error: 'image is too large (max 10MB)' }, { status: 413 });
+  }
+  if (file.type && !ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return NextResponse.json({ error: 'unsupported image type (use jpeg, png, or webp)' }, { status: 415 });
+  }
 
   let app: ApplicationFields;
   try {
@@ -50,7 +59,8 @@ export async function POST(req: Request) {
 
   try {
     return NextResponse.json(await verifyImage(image, app, mime));
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'verification failed' }, { status: 502 });
+  } catch (e) {
+    console.error('verify failed', e);
+    return NextResponse.json({ error: 'verification failed' }, { status: 502 });
   }
 }

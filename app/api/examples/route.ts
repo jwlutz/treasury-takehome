@@ -19,7 +19,8 @@ export function GET(req: NextRequest) {
       return NextResponse.json({ example });
     }
     return NextResponse.json({ examples: loadExamples() });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'could not load examples' }, { status: 500 });
+  } catch (e) {
+    console.error('examples failed', e);
+    return NextResponse.json({ error: 'could not load examples' }, { status: 500 });
   }
 }

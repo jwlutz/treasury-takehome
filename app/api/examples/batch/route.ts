@@ -6,9 +6,6 @@ import type { ApplicationFields } from '../../../../lib/policy/types';
 
 export const runtime = 'nodejs';
 
-// the manifest labels its ai images correct/wrong/needs_review; map to the engine's decision vocab
-const EXPECTED: Record<string, string | null> = { correct: 'approve', wrong: 'reject', needs_review: 'needs_review' };
-
 // a ready-made batch (the 15 ai labels) so the dashboard can be demoed with no csv + upload.
 export function GET() {
   try {
@@ -35,14 +32,14 @@ export function GET() {
         return {
           id: r.id,
           filename: basename(r.image_path),
-          expected: EXPECTED[r.expected_decision] ?? null, // demo only: lets the dashboard show accuracy
           application,
           image: `data:${mime};base64,${readFileSync(abs).toString('base64')}`,
           mime,
         };
       });
     return NextResponse.json({ items });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'could not load batch examples' }, { status: 500 });
+  } catch (e) {
+    console.error('batch examples failed', e);
+    return NextResponse.json({ error: 'could not load batch examples' }, { status: 500 });
   }
 }

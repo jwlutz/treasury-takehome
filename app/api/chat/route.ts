@@ -99,8 +99,12 @@ export async function POST(req: Request) {
   try {
     const res = await client().chat.completions.create(params);
     const out = JSON.parse(res.choices[0].message.content ?? '{}');
-    return NextResponse.json({ say: String(out.say ?? ''), highlight: out.highlight ?? null, tokens: res.usage?.total_tokens ?? 0 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'guide failed' }, { status: 502 });
+    // the model can only point at an allowlisted element id for this page; anything else -> no highlight
+    const allowed = new Set((TARGETS[page] ?? TARGETS.single).map((t) => t.id));
+    const highlight = out.highlight && allowed.has(out.highlight) ? out.highlight : null;
+    return NextResponse.json({ say: String(out.say ?? ''), highlight, tokens: res.usage?.total_tokens ?? 0 });
+  } catch (e) {
+    console.error('chat failed', e);
+    return NextResponse.json({ error: 'guide failed' }, { status: 502 });
   }
 }

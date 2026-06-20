@@ -19,7 +19,6 @@ interface ResultState {
 
 interface Row extends BatchManifestRow, ResultState {
   preview: string;
-  expected?: Decision; // demo only, from the sample batch
 }
 
 const CSV_HEADER =
@@ -51,7 +50,6 @@ export default function Batch() {
   const [manifest, setManifest] = useState<BatchManifestRow[]>([]);
   const [files, setFiles] = useState<Map<string, File>>(new Map());
   const [previews, setPreviews] = useState<Map<string, string>>(new Map());
-  const [expected, setExpected] = useState<Map<string, Decision>>(new Map());
   const [results, setResults] = useState<Record<string, ResultState>>({});
   const [running, setRunning] = useState(false);
   const [role, setRole] = useState<'dashboard' | 'review'>('dashboard');
@@ -78,10 +76,9 @@ export default function Batch() {
         .map((m) => ({
           ...m,
           preview: previews.get(m.filename) ?? '',
-          expected: expected.get(m.filename),
           ...(results[m.filename] ?? { status: 'pending' as RowStatus }),
         })),
-    [manifest, files, previews, expected, results],
+    [manifest, files, previews, results],
   );
 
   const unmatched = manifest.filter((m) => !files.has(m.filename)).map((m) => m.filename);
@@ -95,8 +92,6 @@ export default function Batch() {
   };
   const errored = rows.filter((r) => r.status === 'error').length;
   const avgLatency = done.length ? done.reduce((s, r) => s + (r.latencyMs ?? 0), 0) / done.length : 0;
-  const graded = done.filter((r) => r.expected);
-  const correct = graded.filter((r) => r.decision === r.expected).length;
   // the queue is only what needs a human: items the engine sent to review. rejects are already decided.
   const queue = rows.filter((r) => r.status === 'done' && r.decision === 'needs_review' && !r.override);
 
@@ -130,7 +125,6 @@ export default function Batch() {
     setManifest([]);
     setFiles(new Map());
     setPreviews(new Map());
-    setExpected(new Map());
     setResults({});
     setError('');
   }
@@ -169,17 +163,14 @@ export default function Batch() {
       const m: BatchManifestRow[] = [];
       const fmap = new Map<string, File>();
       const pmap = new Map<string, string>();
-      const emap = new Map<string, Decision>();
       for (const it of items) {
         m.push({ filename: it.filename, application: it.application as ApplicationFields });
         fmap.set(it.filename, await dataUrlToFile(it.image, it.filename, it.mime));
         pmap.set(it.filename, it.image);
-        if (it.expected) emap.set(it.filename, it.expected);
       }
       setManifest(m);
       setFiles(fmap);
       setPreviews(pmap);
-      setExpected(emap);
       setResults({});
     } catch (e: any) {
       setError(e?.message ?? 'could not load the sample batch');
@@ -339,14 +330,6 @@ export default function Batch() {
                   <b>{(avgLatency / 1000).toFixed(1)}s</b>
                   <span>avg / label</span>
                 </div>
-                {graded.length > 0 && (
-                  <div className="stat">
-                    <b>
-                      {correct}/{graded.length}
-                    </b>
-                    <span>match expected</span>
-                  </div>
-                )}
               </div>
 
               <table className="results">

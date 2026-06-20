@@ -2,35 +2,24 @@
 // (no local pipeline -- this exercises the deployed function for real).
 //   BASE=https://treasury-takehome-liard.vercel.app bun run verify:prod
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import type { Decision } from '../lib/policy/types';
+import { pool, loadFixtures, appOf, imagePath } from './_shared';
 
 const BASE = process.env.BASE ?? 'https://treasury-takehome-liard.vercel.app';
-const DIR = join(process.cwd(), 'data', 'eval');
 const DECISIONS: Decision[] = ['approve', 'needs_review', 'reject'];
 // the model reads through these degraded-but-readable photos and decides them; ground truth labels
 // them needs_review conservatively, so an approve here is expected policy, not a miss.
 const KNOWN_DEGRADED_APPROVE = new Set(['ALBV-011', 'ALBV-024']);
 
-async function pool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): Promise<R[]> {
-  const out: R[] = new Array(items.length);
-  let i = 0;
-  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
-    while (i < items.length) { const idx = i++; out[idx] = await fn(items[idx]); }
-  }));
-  return out;
-}
-
 async function main() {
-  const rows = readFileSync(join(DIR, 'ground_truth.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  const rows = loadFixtures();
   console.log(`live verify: ${rows.length} fixtures against ${BASE}\n`);
 
   const results = await pool(rows, 4, async (r: any) => {
-    const app = { beverage_type: r.beverage_type, ...r.application_fields };
     const fd = new FormData();
-    const buf = readFileSync(join(DIR, 'images', `${r.id}.png`));
+    const buf = readFileSync(imagePath(r.id));
     fd.append('image', new Blob([buf], { type: 'image/png' }), `${r.id}.png`);
-    fd.append('application', JSON.stringify(app));
+    fd.append('application', JSON.stringify(appOf(r)));
     let got = '(error)', status = 0, err = '';
     try {
       const res = await fetch(`${BASE}/api/verify`, { method: 'POST', body: fd });

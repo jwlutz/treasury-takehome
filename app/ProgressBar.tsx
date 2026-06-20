@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-// a weighted loading bar: fills fast then decelerates toward ~92% over the expected duration, so the
-// wait reads as progress instead of a frozen spinner. it also shows the live wall-clock elapsed, which
-// is the time the user actually feels (and runs a bit longer than the model's own latency number).
-// the caller unmounts it and swaps in the result when the call returns.
+// a weighted loading bar. the fill (CSS @keyframes weightedfill) eases out toward ~92% over the
+// expected duration so the wait reads as progress, not a frozen spinner. this component owns the live
+// wall-clock counter -- the time the user actually feels, which runs a bit longer than the model's own
+// latency number. the caller unmounts it and swaps in the result when the call returns.
 export default function ProgressBar({ label, expectedMs = 5000 }: { label: string; expectedMs?: number }) {
   const [elapsed, setElapsed] = useState(0);
   const start = useRef(0);
