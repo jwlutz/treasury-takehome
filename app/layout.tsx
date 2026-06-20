@@ -22,6 +22,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <div className="nav-links">
                 <Link href="/" data-guide="nav-single">Single label</Link>
                 <Link href="/batch" data-guide="nav-batch">Batch</Link>
+                <Link href="/risk-coverage" data-guide="nav-risk">Risk-coverage</Link>
                 <Link href="/usage" data-guide="nav-usage">Usage</Link>
               </div>
               <Feedback />

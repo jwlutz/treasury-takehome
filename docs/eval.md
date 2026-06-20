@@ -3,6 +3,7 @@
 How to run:
 - `npx tsx scripts/eval.ts` — full pipeline (model extract + quality gate + verify). Needs `OPENAI_API_KEY`.
 - `npx tsx scripts/eval.ts --logic` — rules only, straight off the dataset's observed fields, no API calls.
+- `bun run verify:prod` — runs all 24 fixtures against the **live deployed** `/api/verify` (not the local pipeline). Last run: 24/24 HTTP 200, 0 false clears, 0 false rejects, identical decisions to local.
 
 Fixtures live in `data/eval/`: the 24 provided synthetic labels (`ALBV-001..024`), crisp text with known dispositions, covering the on-purpose edge cases (abv mismatch, title-case warning, missing warning, header not bold, foreign health warning, missing net contents, import missing country, glare, skew, brand spelling variant, and clean labels across spirits/wine/malt).
 
@@ -36,6 +37,12 @@ Missing required fields (ALBV-009 import missing country, ALBV-023 missing net c
 ## Model vs rules
 
 Model+logic accuracy (92%) equals logic-only accuracy (92%): on this crisp set the extraction was perfect, so every decision came from the deterministic rules, not the model. On real degraded photos extraction is the harder part; the safety net there is the visible-but-unreadable → review path (an unreadable field comes back empty and routes to a human), plus the proof = 2x abv cross-check and logprob confidence.
+
+## Risk-coverage
+
+`bun run risk-coverage` sweeps a read-confidence cutoff: only auto-decide (trust an approve/reject) when the read clears the bar, otherwise route to a human. Coverage is the share auto-decided; risk is the false-clear rate among them. The operating point is the most coverage that stays under the budget.
+
+On this set the false-clear rate is 0% at every cutoff, so the operating point is **auto-decide 92%, review 8%, with 0 false clears** — coverage is capped only by the 8% the rules already flag as judgment calls, not by the error budget. Visualized at `/risk-coverage`; raw curve in `data/eval/risk-coverage.json`. The curve only bends on a larger, noisier set, which is where this picks the cutoff for real.
 
 ## Limitations
 

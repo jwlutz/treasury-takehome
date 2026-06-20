@@ -10,7 +10,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "eval": "tsx scripts/eval.ts",
-    "eval:logic": "tsx scripts/eval.ts --logic"
+    "eval:logic": "tsx scripts/eval.ts --logic",
+    "risk-coverage": "tsx scripts/risk-coverage.ts",
+    "verify:prod": "tsx scripts/verify-prod.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",

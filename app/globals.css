@@ -1357,3 +1357,113 @@ button.th {
     animation: none !important;
   }
 }
+
+/* weighted loading bar (verify + generate) -- fills fast then decelerates, shows live wall-clock */
+.progress-load {
+  width: 100%;
+  max-width: 360px;
+  margin: 1rem auto 0;
+}
+.progress-load-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  margin-bottom: 0.4rem;
+}
+.progress-load-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--accent);
+}
+.progress-load-track {
+  height: 8px;
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-load-fill {
+  height: 100%;
+  width: 8%;
+  background: var(--accent);
+  border-radius: 999px;
+  animation: weightedfill 5000ms cubic-bezier(0.1, 0.75, 0.2, 1) forwards;
+}
+@keyframes weightedfill {
+  from { width: 8%; }
+  to { width: 92%; }
+}
+
+/* risk-coverage page */
+.rc-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.rc-stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+}
+.rc-stat b {
+  display: block;
+  font-size: 1.9rem;
+  line-height: 1.1;
+}
+.rc-stat span {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+.rc-stat.good b { color: var(--approve-ink); }
+.rc-stat.warn b { color: var(--review-ink); }
+.rc-op {
+  background: #eef4fb;
+  border: 1px solid var(--line-strong);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.1rem;
+  font-size: 1.05rem;
+  margin-bottom: 1.5rem;
+}
+.rc-split {
+  display: flex;
+  height: 34px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.rc-split .auto {
+  background: var(--approve-line);
+  color: var(--approve-ink);
+  display: flex;
+  align-items: center;
+  padding-left: 0.7rem;
+}
+.rc-split .review {
+  background: var(--review-line);
+  color: var(--review-ink);
+  display: flex;
+  align-items: center;
+  padding-left: 0.7rem;
+}
+.rc-chart {
+  margin: 1.75rem 0 1rem;
+  max-width: 680px;
+}
+.rc-note {
+  color: var(--ink-soft);
+  max-width: 680px;
+  line-height: 1.6;
+}
+.rc-note code {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+  font-size: 0.85em;
+}

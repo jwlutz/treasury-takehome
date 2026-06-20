@@ -88,7 +88,8 @@ brand, class/type, abv, net contents, bottler name+addr, country of origin (impo
 - [x] e2e: playwright covers the guide (answer + red box + minimize) and the feedback modal
 - [x] home redesign: left-rail radial menu (try example / generate test fan a semicircle; batch links out), centered dropzone that swaps to the image, fields beside it on one screen
 - [ ] tunable missing-field policy (strict/lenient) wired into verify() + surfaced in the guide
-- [ ] risk-coverage curve
+- [x] risk-coverage curve: scripts/risk-coverage.ts sweeps a read-confidence cutoff -> coverage vs false-clear rate + operating point; /risk-coverage page visualizes it (0 false clears, auto-decide 92%, review 8%)
+- [x] weighted loading bar (app/ProgressBar.tsx): fills fast then decelerates over the expected duration + shows live wall-clock, on verify + generate; result shows real round-trip, not just model latency
 - [ ] accessibility pass: keyboard + screen reader + contrast audit
 - [ ] readme (setup, approach, tradeoffs) + deploy to vercel
 - [x] generate & test: live image-gen (gpt-image-1, portrait) of a compliant/noncompliant/random label -> verify live, expected vs got; offline svg template as the fallback when the image model is unavailable (+ 9 tests). caveat: the image model garbles exact numbers + the verbatim govt warning, so a "compliant" gen often still rejects -> it's an honest stress test of the verifier, not a guaranteed-pass. composite (photoreal bg + crisp text overlay) would make compliant gens reliable if we want that.

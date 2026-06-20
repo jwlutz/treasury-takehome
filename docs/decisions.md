@@ -38,7 +38,7 @@
 - still skip the multi-model council (correlated errors, not worth the cost)
 - today the verdict is rules + field readability, not a confidence threshold. confidence is computed + shown but doesn't route yet
 - the scary error is a false clear (we ship a noncompliant label), much worse than a false flag (a human glances at a fine one). the cutoff should bound false-clears, not chase accuracy
-- that's the risk-coverage curve: "to hold false-clears under 1% we auto-clear X%", data sets the cutoff instead of a vibes 90%. next to build
+- that's the risk-coverage curve: "to hold false-clears under 1% we auto-clear X%", data sets the cutoff instead of a vibes 90%. built: `bun run risk-coverage` + the /risk-coverage page (on the clean set: 0 false clears, auto-decide 92%, review 8%)
 
 **how do we know it works? (test set)**
 - generated our own ~35 labels and wrote the expected values, so we own both sides and know the ground truth

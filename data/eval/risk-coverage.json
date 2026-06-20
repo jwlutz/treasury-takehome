@@ -1,0 +1,347 @@
+{
+  "total": 24,
+  "autoDecidable": 22,
+  "reviewRate": 0.083,
+  "target": 0.01,
+  "falseClearsTotal": 0,
+  "operatingPoint": {
+    "threshold": 0,
+    "coverage": 0.917,
+    "falseClearRate": 0,
+    "errorRate": 0.091,
+    "covered": 22,
+    "falseClears": 0
+  },
+  "points": [
+    {
+      "threshold": 0,
+      "coverage": 0.917,
+      "falseClearRate": 0,
+      "errorRate": 0.091,
+      "covered": 22,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.956,
+      "coverage": 0.917,
+      "falseClearRate": 0,
+      "errorRate": 0.091,
+      "covered": 22,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.96,
+      "coverage": 0.875,
+      "falseClearRate": 0,
+      "errorRate": 0.095,
+      "covered": 21,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.962,
+      "coverage": 0.833,
+      "falseClearRate": 0,
+      "errorRate": 0.1,
+      "covered": 20,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.973,
+      "coverage": 0.792,
+      "falseClearRate": 0,
+      "errorRate": 0.105,
+      "covered": 19,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.974,
+      "coverage": 0.75,
+      "falseClearRate": 0,
+      "errorRate": 0.111,
+      "covered": 18,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.975,
+      "coverage": 0.708,
+      "falseClearRate": 0,
+      "errorRate": 0.118,
+      "covered": 17,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.976,
+      "coverage": 0.667,
+      "falseClearRate": 0,
+      "errorRate": 0.125,
+      "covered": 16,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.977,
+      "coverage": 0.625,
+      "falseClearRate": 0,
+      "errorRate": 0.133,
+      "covered": 15,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.977,
+      "coverage": 0.583,
+      "falseClearRate": 0,
+      "errorRate": 0.143,
+      "covered": 14,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.978,
+      "coverage": 0.542,
+      "falseClearRate": 0,
+      "errorRate": 0.154,
+      "covered": 13,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.978,
+      "coverage": 0.5,
+      "falseClearRate": 0,
+      "errorRate": 0.167,
+      "covered": 12,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.979,
+      "coverage": 0.458,
+      "falseClearRate": 0,
+      "errorRate": 0.182,
+      "covered": 11,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.98,
+      "coverage": 0.417,
+      "falseClearRate": 0,
+      "errorRate": 0.2,
+      "covered": 10,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.98,
+      "coverage": 0.375,
+      "falseClearRate": 0,
+      "errorRate": 0.111,
+      "covered": 9,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.982,
+      "coverage": 0.333,
+      "falseClearRate": 0,
+      "errorRate": 0.125,
+      "covered": 8,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.983,
+      "coverage": 0.292,
+      "falseClearRate": 0,
+      "errorRate": 0.143,
+      "covered": 7,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.983,
+      "coverage": 0.25,
+      "falseClearRate": 0,
+      "errorRate": 0.167,
+      "covered": 6,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.984,
+      "coverage": 0.208,
+      "falseClearRate": 0,
+      "errorRate": 0.2,
+      "covered": 5,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.985,
+      "coverage": 0.167,
+      "falseClearRate": 0,
+      "errorRate": 0,
+      "covered": 4,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.986,
+      "coverage": 0.125,
+      "falseClearRate": 0,
+      "errorRate": 0,
+      "covered": 3,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.988,
+      "coverage": 0.083,
+      "falseClearRate": 0,
+      "errorRate": 0,
+      "covered": 2,
+      "falseClears": 0
+    },
+    {
+      "threshold": 0.99,
+      "coverage": 0.042,
+      "falseClearRate": 0,
+      "errorRate": 0,
+      "covered": 1,
+      "falseClears": 0
+    }
+  ],
+  "items": [
+    {
+      "id": "ALBV-001",
+      "confidence": 0.975,
+      "decision": "approve",
+      "expected": "approve"
+    },
+    {
+      "id": "ALBV-002",
+      "confidence": 0.962,
+      "decision": "approve",
+      "expected": "approve"
+    },
+    {
+      "id": "ALBV-003",
+      "confidence": 0.977,
+      "decision": "reject",
+      "expected": "reject"
+    },
+    {
+      "id": "ALBV-004",
+      "confidence": 0.978,
+      "decision": "reject",
+      "expected": "reject"
+    },
+    {
+      "id": "ALBV-005",
+      "confidence": 0.979,
+      "decision": "reject",
+      "expected": "reject"
+    },
+    {
+      "id": "ALBV-006",
+      "confidence": 0.986,
+      "decision": "reject",
+      "expected": "reject"
+    },
+    {
+      "id": "ALBV-007",
+      "confidence": 0.977,
+      "decision": "reject",
+      "expected": "reject"
+    },
+    {
+      "id": "ALBV-008",
+      "confidence": 0.96,
+      "decision": "reject",
+      "expected": "reject"
+    },
+    {
+      "id": "ALBV-009",
+      "confidence": 0.99,
+      "decision": "reject",
+      "expected": "reject"
+    },
+    {
+      "id": "ALBV-010",
+      "confidence": 0.978,
+      "decision": "approve",
+      "expected": "approve"
+    },
+    {
+      "id": "ALBV-011",
+      "confidence": 0.98,
+      "decision": "approve",
+      "expected": "needs_review"
+    },
+    {
+      "id": "ALBV-012",
+      "confidence": 0.972,
+      "decision": "needs_review",
+      "expected": "needs_review"
+    },
+    {
+      "id": "ALBV-013",
+      "confidence": 0.976,
+      "decision": "approve",
+      "expected": "approve"
+    },
+    {
+      "id": "ALBV-014",
+      "confidence": 0.988,
+      "decision": "reject",
+      "expected": "reject"
+    },
+    {
+      "id": "ALBV-015",
+      "confidence": 0.983,
+      "decision": "approve",
+      "expected": "approve"
+    },
+    {
+      "id": "ALBV-016",
+      "confidence": 0.985,
+      "decision": "approve",
+      "expected": "approve"
+    },
+    {
+      "id": "ALBV-017",
+      "confidence": 0.983,
+      "decision": "reject",
+      "expected": "reject"
+    },
+    {
+      "id": "ALBV-018",
+      "confidence": 0.973,
+      "decision": "approve",
+      "expected": "approve"
+    },
+    {
+      "id": "ALBV-019",
+      "confidence": 0.98,
+      "decision": "reject",
+      "expected": "reject"
+    },
+    {
+      "id": "ALBV-020",
+      "confidence": 0.974,
+      "decision": "reject",
+      "expected": "reject"
+    },
+    {
+      "id": "ALBV-021",
+      "confidence": 0.957,
+      "decision": "needs_review",
+      "expected": "needs_review"
+    },
+    {
+      "id": "ALBV-022",
+      "confidence": 0.982,
+      "decision": "approve",
+      "expected": "approve"
+    },
+    {
+      "id": "ALBV-023",
+      "confidence": 0.956,
+      "decision": "reject",
+      "expected": "reject"
+    },
+    {
+      "id": "ALBV-024",
+      "confidence": 0.984,
+      "decision": "approve",
+      "expected": "needs_review"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import { DECISION, SEV_MARK, checkLabel } from './ui';
 import { generate, imagePrompt, renderLabelSvg, type Scenario } from '../lib/generate';
 import { recordUsage, useUsage } from './usage';
 import RadialMenu, { type RadialItem } from './RadialMenu';
+import ProgressBar from './ProgressBar';
 
 interface VerifyResponse {
   decision: Decision;
@@ -94,6 +95,7 @@ export default function Home() {
   const [preview, setPreview] = useState<string>('');
   const [result, setResult] = useState<VerifyResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [wallMs, setWallMs] = useState<number | null>(null); // real round-trip the user feels (>= model latency)
   const [genStatus, setGenStatus] = useState('');
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
@@ -155,6 +157,8 @@ export default function Home() {
     setLoading(true);
     setError('');
     setResult(null);
+    setWallMs(null);
+    const t0 = performance.now();
     try {
       const fd = new FormData();
       fd.append('image', f);
@@ -162,6 +166,7 @@ export default function Home() {
       const res = await fetch('/api/verify', { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'verification failed');
+      setWallMs(performance.now() - t0);
       setResult(data);
       recordUsage({ verifications: 1, tokens: data.tokens ?? 0 });
     } catch (err: any) {
@@ -314,9 +319,8 @@ export default function Home() {
             }}
           >
             {genStatus ? (
-              <div className="stage-busy" aria-live="polite">
-                <span className="spinner" aria-hidden="true" />
-                {genStatus}
+              <div className="stage-busy">
+                <ProgressBar label={genStatus} expectedMs={genStatus.includes('Generating a label image') ? 45000 : 6000} />
               </div>
             ) : preview ? (
               <>
@@ -334,6 +338,8 @@ export default function Home() {
               </label>
             )}
           </section>
+
+          {loading && <ProgressBar label="Reading the label…" expectedMs={5000} />}
 
           {error && (
             <div className="alert" role="alert">
@@ -357,7 +363,8 @@ export default function Home() {
               </div>
 
               <p className="meta">
-                checked in {(result.latencyMs / 1000).toFixed(1)}s
+                checked in {((wallMs ?? result.latencyMs) / 1000).toFixed(1)}s
+                {wallMs != null && <> (model {(result.latencyMs / 1000).toFixed(1)}s)</>}
                 {result.confidence != null && <> · read confidence {(result.confidence * 100).toFixed(0)}%</>}
               </p>
 
