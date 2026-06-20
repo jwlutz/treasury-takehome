@@ -9,8 +9,9 @@
 - tradeoff: the code only catches what we encoded. label variety we didn't anticipate needs new rules. we traded model flexibility for control + defensibility, which is the right call for a regulatory tool. in practice we would catch edge cases within hours to days with the team's help
 
 **two kinds of blank?**
-- not on the label = fail (a required field is missing). can't read it = review (might be there, just glare/crop). different outcomes, not the same bug
-- field-aware: only the govt warning is a hard reject when it's truly absent. every other missing field goes to review (could be on another panel or embossed)
+- not on the label = fail (a required field is truly absent -> reject). can't read it = review (visible, but glare/crop makes the value unreadable). different outcomes, not the same bug
+- the model's read decides which: value present -> compare it; visible but no value -> review; not visible at all -> reject
+- we changed this after the eval: missing required fields used to go to review. the spec, the dataset, and the minimize-review goal all say a readable absence is a decision, not a punt
 
 **warning strict, everything else fuzzy?**
 - brand/producer/etc get normalized + fuzzy matched b/c real labels vary in case/punct/spacing (STONE'S THROW = Stone's Throw)
@@ -18,9 +19,9 @@
 - free cross-check: proof should = 2x abv, catches a garbled number for free
 
 **image-quality gate?**
-- separate deterministic check (blur + contrast via sharp), not the model, b/c a VLM reads straight through glare/blur and reports legible=true
-- a degraded image -> human review no matter how confident the model is
-- tradeoff: global pixel stats only reliably catch blur/wash. glare/crop/skew need local detection we didn't build, so it's a coarse net not full image-quality analysis
+- we compute a deterministic blur/contrast score (sharp), but it's advisory only -- it never routes a decision
+- the call: a usable photo isn't a problem just because it's soft or has glare. readability is the model's job. if it can read the value we compare it; if glare/blur actually costs a read, that field comes back empty and routes to review on its own
+- so image quality is never pointed out unless it genuinely blocked a read. tradeoff: no independent pixel backstop, so a confident misread on a degraded photo is the residual risk (mitigated by the cross-checks + logprob confidence)
 
 **Stack: Typescript, Next.js + Vercel serverless**
 - a serverless route keeps the api key off the client and deploys in one step
@@ -28,14 +29,14 @@
 - tradeoff: image-gen takes 30-45s so maxDuration has to be bumped (and it would blow a default hobby timeout), cold starts add latency, and the whole design assumes outbound network that the target prod env blocks
 
 **When does it go to human review?**
-- only when the model can't read a value, or the deterministic gate trips. a confident read off an imperfect photo gets compared
+- only when the model can't read a required value (it comes back empty), or a soft mismatch is a judgment call (brand spelling, producer address). a confident read off an imperfect photo gets compared, not punted
 - upside: directly attacks the "drowning in routine" problem, far fewer needless escalations
-- tradeoff: we're trusting the model's read on a degraded image, so a confident-but-wrong read could auto-clear or auto-reject. mitigated by the blur gate, the proof=2x-abv cross-check, and logprob confidence, but it's a real risk we chose to take
+- tradeoff: we're trusting the model's read on a degraded image, so a confident-but-wrong read could auto-clear or auto-reject. mitigated by the proof=2x-abv cross-check and logprob confidence, but it's a real risk we chose to take
 
 **confidence + the operating point?**
 - planned multi-sample agreement and skipping logprobs; flipped it. logprobs give a per-read confidence from the one call we already make, no N-times cost or latency. sampling N times for agreement would blow the 5s budget
 - still skip the multi-model council (correlated errors, not worth the cost)
-- today the verdict is rules + the quality gate, not a confidence threshold. confidence is computed + shown but doesn't route yet
+- today the verdict is rules + field readability, not a confidence threshold. confidence is computed + shown but doesn't route yet
 - the scary error is a false clear (we ship a noncompliant label), much worse than a false flag (a human glances at a fine one). the cutoff should bound false-clears, not chase accuracy
 - that's the risk-coverage curve: "to hold false-clears under 1% we auto-clear X%", data sets the cutoff instead of a vibes 90%. next to build
 

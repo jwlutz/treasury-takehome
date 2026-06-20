@@ -6,9 +6,9 @@
   "reviewRate": 2,
   "falseClears": [],
   "falseRejects": [],
-  "avgLatencyMs": 3387,
-  "ranAtMs": 1781916406715,
-  "totalMs": 20900,
+  "avgLatencyMs": 3142,
+  "ranAtMs": 1781917187308,
+  "totalMs": 19412,
   "results": [
     {
       "id": "ALBV-001",
@@ -16,8 +16,8 @@
       "deg": "none",
       "logic": "approve",
       "got": "approve",
-      "latencyMs": 4518,
-      "confidence": 0.9776178163104392,
+      "latencyMs": 4507,
+      "confidence": 0.9938031684676993,
       "reasons": []
     },
     {
@@ -26,8 +26,8 @@
       "deg": "none",
       "logic": "approve",
       "got": "approve",
-      "latencyMs": 4497,
-      "confidence": 0.9808936877926859,
+      "latencyMs": 3415,
+      "confidence": 0.9801615699484426,
       "reasons": []
     },
     {
@@ -36,8 +36,8 @@
       "deg": "none",
       "logic": "reject",
       "got": "reject",
-      "latencyMs": 4897,
-      "confidence": 0.9759402935662868,
+      "latencyMs": 4804,
+      "confidence": 0.9805726630514002,
       "reasons": [
         "alcohol_content:error"
       ]
@@ -48,8 +48,8 @@
       "deg": "none",
       "logic": "reject",
       "got": "reject",
-      "latencyMs": 4493,
-      "confidence": 0.9927776180999722,
+      "latencyMs": 3173,
+      "confidence": 0.9941111453825445,
       "reasons": [
         "government_warning:error"
       ]
@@ -60,8 +60,8 @@
       "deg": "none",
       "logic": "reject",
       "got": "reject",
-      "latencyMs": 3516,
-      "confidence": 0.9662721026274391,
+      "latencyMs": 3006,
+      "confidence": 0.9791579719327647,
       "reasons": [
         "government_warning:error"
       ]
@@ -72,8 +72,8 @@
       "deg": "none",
       "logic": "reject",
       "got": "reject",
-      "latencyMs": 3226,
-      "confidence": 0.9585042702595152,
+      "latencyMs": 3043,
+      "confidence": 0.98890504909328,
       "reasons": [
         "government_warning:error"
       ]
@@ -84,8 +84,8 @@
       "deg": "none",
       "logic": "reject",
       "got": "reject",
-      "latencyMs": 3202,
-      "confidence": 0.9684721761050602,
+      "latencyMs": 2976,
+      "confidence": 0.9625488170111206,
       "reasons": [
         "government_warning_format:error"
       ]
@@ -96,8 +96,8 @@
       "deg": "none",
       "logic": "reject",
       "got": "reject",
-      "latencyMs": 3052,
-      "confidence": 0.9753329648534098,
+      "latencyMs": 2908,
+      "confidence": 0.985131969188442,
       "reasons": [
         "net_contents:error"
       ]
@@ -108,8 +108,8 @@
       "deg": "none",
       "logic": "reject",
       "got": "reject",
-      "latencyMs": 3276,
-      "confidence": 0.9562670749399632,
+      "latencyMs": 2776,
+      "confidence": 0.9847332569278126,
       "reasons": [
         "country_of_origin:error"
       ]
@@ -120,8 +120,8 @@
       "deg": "none",
       "logic": "approve",
       "got": "approve",
-      "latencyMs": 3044,
-      "confidence": 0.9754821711522341,
+      "latencyMs": 4104,
+      "confidence": 0.9555558672885545,
       "reasons": []
     },
     {
@@ -130,8 +130,8 @@
       "deg": "glare",
       "logic": "approve",
       "got": "approve",
-      "latencyMs": 2932,
-      "confidence": 0.9929169414161534,
+      "latencyMs": 2961,
+      "confidence": 0.9915774194774741,
       "reasons": []
     },
     {
@@ -140,8 +140,8 @@
       "deg": "none",
       "logic": "needs_review",
       "got": "needs_review",
-      "latencyMs": 2913,
-      "confidence": 0.9937906145522579,
+      "latencyMs": 2864,
+      "confidence": 0.9898003070803478,
       "reasons": [
         "producer_address:warning"
       ]
@@ -152,8 +152,8 @@
       "deg": "none",
       "logic": "approve",
       "got": "approve",
-      "latencyMs": 3005,
-      "confidence": 0.9834437126307437,
+      "latencyMs": 2813,
+      "confidence": 0.9818324285612883,
       "reasons": []
     },
     {
@@ -162,8 +162,8 @@
       "deg": "none",
       "logic": "reject",
       "got": "reject",
-      "latencyMs": 2901,
-      "confidence": 0.9912308658564593,
+      "latencyMs": 2737,
+      "confidence": 0.9792556464605808,
       "reasons": [
         "alcohol_content:error"
       ]
@@ -174,8 +174,8 @@
       "deg": "none",
       "logic": "approve",
       "got": "approve",
-      "latencyMs": 2855,
-      "confidence": 0.9770125702471283,
+      "latencyMs": 2940,
+      "confidence": 0.9646203774945727,
       "reasons": []
     },
     {
@@ -184,8 +184,8 @@
       "deg": "none",
       "logic": "approve",
       "got": "approve",
-      "latencyMs": 3056,
-      "confidence": 0.9721150056011176,
+      "latencyMs": 2937,
+      "confidence": 0.9726918487018028,
       "reasons": []
     },
     {
@@ -194,8 +194,8 @@
       "deg": "none",
       "logic": "reject",
       "got": "reject",
-      "latencyMs": 2945,
-      "confidence": 0.9719979403071238,
+      "latencyMs": 3290,
+      "confidence": 0.9808051508067057,
       "reasons": [
         "government_warning:error"
       ]
@@ -206,8 +206,8 @@
       "deg": "none",
       "logic": "approve",
       "got": "approve",
-      "latencyMs": 3487,
-      "confidence": 0.9714715571939746,
+      "latencyMs": 2836,
+      "confidence": 0.9573591431554013,
       "reasons": []
     },
     {
@@ -216,8 +216,8 @@
       "deg": "none",
       "logic": "reject",
       "got": "reject",
-      "latencyMs": 3052,
-      "confidence": 0.9811891038180363,
+      "latencyMs": 2594,
+      "confidence": 0.9836309016540565,
       "reasons": [
         "government_warning:error"
       ]
@@ -228,8 +228,8 @@
       "deg": "none",
       "logic": "reject",
       "got": "reject",
-      "latencyMs": 3046,
-      "confidence": 0.9891537693557285,
+      "latencyMs": 2662,
+      "confidence": 0.9945099328505937,
       "reasons": [
         "class_type:error"
       ]
@@ -240,8 +240,8 @@
       "deg": "none",
       "logic": "needs_review",
       "got": "needs_review",
-      "latencyMs": 3001,
-      "confidence": 0.9865120183820661,
+      "latencyMs": 2801,
+      "confidence": 0.9801671319928905,
       "reasons": [
         "brand_name:warning"
       ]
@@ -252,8 +252,8 @@
       "deg": "none",
       "logic": "approve",
       "got": "approve",
-      "latencyMs": 3192,
-      "confidence": 0.9812707309559464,
+      "latencyMs": 2757,
+      "confidence": 0.9844709349022311,
       "reasons": []
     },
     {
@@ -262,8 +262,8 @@
       "deg": "none",
       "logic": "reject",
       "got": "reject",
-      "latencyMs": 3558,
-      "confidence": 0.9830703506430168,
+      "latencyMs": 3293,
+      "confidence": 0.9743682799583995,
       "reasons": [
         "net_contents:error"
       ]
@@ -274,8 +274,8 @@
       "deg": "skew",
       "logic": "approve",
       "got": "approve",
-      "latencyMs": 3628,
-      "confidence": 0.9686083911396811,
+      "latencyMs": 3221,
+      "confidence": 0.9814080642310947,
       "reasons": []
     }
   ]

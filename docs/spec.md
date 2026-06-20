@@ -22,7 +22,7 @@ brand, class/type, abv, net contents, bottler name+addr, country of origin (impo
 - logprobs give a per-read confidence from the one call we already make (flipped the original "skip logprobs": cheaper than sampling N times for agreement, which would blow 5s)
 - quoting the text off the label + the cross-checks feed in too
 - still skip the multi-model council (correlated errors, not worth the cost)
-- routing today is rules + the quality gate; confidence is shown but doesn't auto-route yet
+- routing today is rules + field readability; confidence + the quality score are shown but don't auto-route yet
 - cutoff comes from data, not a vibes 90% -> the risk-coverage curve (next to build)
 - single pass is already <5s so no cascade needed yet
 
@@ -74,7 +74,7 @@ brand, class/type, abv, net contents, bottler name+addr, country of origin (impo
 
 - [x] decision engine: normalize + warning + verify, beverage + field aware (lib/policy) + 23 tests
 - [x] evidence extraction: gpt-5.4-mini, forced structured output, model only EXTRACTS (lib/extract)
-- [x] image-quality gate: blur + contrast, independent of the model (lib/quality) + 2 tests
+- [x] image-quality gate: blur + contrast, independent of the model (lib/quality) + 2 tests. advisory only -- never routes; a usable photo isn't a problem unless it actually costs a read (then that field comes back empty and routes on its own)
 - [x] pipeline: extract + gate run in parallel -> verify (lib/pipeline)
 - [x] single-label page: drag-drop/browse upload, app-values form, big 3-state result + reasons
 - [x] /api/verify: key stays server-side, nothing written to disk

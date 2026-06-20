@@ -12,7 +12,7 @@ Fixtures live in `data/eval/`: the 24 provided synthetic labels (`ALBV-001..024`
 - **False rejects: 0.** All 8 clean labels approved.
 - **Sent to human review: 2/24 (8%).** Only the two genuine judgment calls (producer address differs, brand spelling differs). No "bad pic" went to review.
 - **Accuracy vs ground truth: 22/24 (92%).**
-- **Avg extract latency: 3.4s** (under the 5s budget).
+- **Avg extract latency: ~3.1s** (under the 5s budget).
 
 Confusion matrix (rows = expected, cols = predicted):
 
@@ -35,11 +35,11 @@ Missing required fields (ALBV-009 import missing country, ALBV-023 missing net c
 
 ## Model vs rules
 
-Model+logic accuracy (92%) equals logic-only accuracy (92%): on this crisp set the extraction was perfect, so every decision came from the deterministic rules, not the model. On real degraded photos extraction is the harder part; the image-quality gate and the visible-but-unreadable → review path are the safety nets there.
+Model+logic accuracy (92%) equals logic-only accuracy (92%): on this crisp set the extraction was perfect, so every decision came from the deterministic rules, not the model. On real degraded photos extraction is the harder part; the safety net there is the visible-but-unreadable → review path (an unreadable field comes back empty and routes to a human), plus the proof = 2x abv cross-check and logprob confidence.
 
 ## Limitations
 
-- The quality gate uses global blur/contrast and does not isolate glare or skew (documented in `lib/quality`). For the two degraded cases the safety net was the model's read, not the gate. A violation genuinely obscured by glare is the residual false-clear risk, mitigated by unreadable → review and the strict verbatim-warning check, but it needs real degraded-photo data to quantify.
+- By design we do not route on a pixel-based quality gate: a usable photo is fine even if it's soft or glary, and readability is the model's read (an unreadable field routes to review on its own). The blur/contrast score is still computed as advisory metadata but never decides. The residual risk is a confident misread on a degraded photo, mitigated by the cross-checks and logprob confidence, but it needs real degraded-photo data to quantify.
 - 24 crisp synthetic labels is a clean engine test, not a real-world accuracy estimate. The next step is the risk-coverage curve on a larger, noisier set to set the auto-clear operating point from data instead of by hand.
 - Latency was measured against OpenAI from a dev machine; cold-start serverless will be higher.
 

@@ -43,7 +43,7 @@ async function main() {
     const gate = await assessImageQuality(abs);
     latencies.push(latencyMs);
 
-    const result = verify(app, evidence, gate);
+    const result = verify(app, evidence); // gate is advisory only now; printed below, not routed on
     const expected = DECISION[r.expected_decision] ?? r.expected_decision;
     const okDecision = result.decision === expected;
     if (okDecision) decisionHits++;
