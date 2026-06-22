@@ -8,7 +8,8 @@ export type CheckStatus = 'pass' | 'pass_with_note' | 'fail';
 
 export type Decision = 'approve' | 'needs_review' | 'reject';
 
-export type BeverageType = 'distilled_spirits' | 'wine' | 'malt_beverage';
+// 'other' = type not yet known (the default until a "fill from image" lookup infers it from class/type).
+export type BeverageType = 'distilled_spirits' | 'wine' | 'malt_beverage' | 'other';
 
 /** the submitted application / COLA values. what we check the label against. */
 export interface ApplicationFields {

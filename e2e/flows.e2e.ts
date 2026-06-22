@@ -42,7 +42,9 @@ async function closeGuide(page: Page) {
 test('home renders the workspace, wheel actions, and nav', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Label check', level: 1 })).toBeVisible();
-  await expect(page.getByText('Compare uploaded photo of label to application values.')).toBeVisible();
+  await expect(
+    page.getByText('Compare uploaded photo of label to application values (The values'),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: /Try example/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Generate test/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Batch', exact: true })).toBeVisible();

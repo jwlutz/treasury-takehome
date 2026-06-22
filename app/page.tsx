@@ -14,7 +14,10 @@ interface VerifyResponse {
   checks: FieldCheck[];
   latencyMs: number;
   confidence: number | null;
+  application?: ApplicationFields; // in "fill from image" mode, the values the model read off the label
 }
+
+type ValueSource = 'given' | 'lookup';
 
 interface Example {
   id: string;
@@ -26,6 +29,7 @@ interface Example {
 }
 
 const BEVERAGES: { value: ApplicationFields['beverage_type']; label: string }[] = [
+  { value: 'other', label: 'Other' },
   { value: 'distilled_spirits', label: 'Distilled spirits' },
   { value: 'wine', label: 'Wine' },
   { value: 'malt_beverage', label: 'Malt beverage / beer' },
@@ -43,7 +47,7 @@ const TEXT_FIELDS: { key: keyof ApplicationFields; label: string; wide?: boolean
 ];
 
 const EMPTY: ApplicationFields = {
-  beverage_type: 'distilled_spirits',
+  beverage_type: 'other', // stays "Other" until a "fill from image" lookup infers it
   brand_name: '',
   class_type: '',
   alcohol_content: '',
@@ -91,6 +95,7 @@ export default function Home() {
   const router = useRouter();
   const usage = useUsage();
   const [app, setApp] = useState<ApplicationFields>(EMPTY);
+  const [source, setSource] = useState<ValueSource>('given'); // "given" = type them; "lookup" = fill from the image
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
   const [result, setResult] = useState<VerifyResponse | null>(null);
@@ -129,10 +134,14 @@ export default function Home() {
     setGenerated(null);
     setFile(f);
     setPreview(f ? URL.createObjectURL(f) : '');
+    // "Given" is the real-world default (the agent matches a label against an existing application);
+    // a bare upload starts there too, and the user opts into "Fill from image" when they have no values.
+    setSource('given');
   }
 
   async function loadExample(ex: Example) {
     setApp(ex.application);
+    setSource('given'); // examples carry their own application values
     setResult(null);
     setError('');
     setGenerated(null);
@@ -154,7 +163,7 @@ export default function Home() {
     }
   }
 
-  async function runVerify(f: File, a: ApplicationFields) {
+  async function runVerify(f: File, a: ApplicationFields, mode: ValueSource = 'given') {
     setLoading(true);
     setError('');
     setResult(null);
@@ -164,11 +173,18 @@ export default function Home() {
       const fd = new FormData();
       fd.append('image', f);
       fd.append('application', JSON.stringify(a));
+      fd.append('mode', mode);
       const res = await fetch('/api/verify', { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'verification failed');
       setWallMs(performance.now() - t0);
       setResult(data);
+      // lookup mode: the model's read becomes the application values, shown in the form and now editable.
+      // flip back to "given" so a re-verify uses those values (and any edits) instead of re-reading the image.
+      if (mode === 'lookup' && data.application) {
+        setApp(data.application);
+        setSource('given');
+      }
       recordUsage({ verifications: 1, tokens: data.tokens ?? 0 });
     } catch (err: any) {
       setError(err?.message ?? 'something went wrong');
@@ -183,7 +199,7 @@ export default function Home() {
       setError('add a label image first.');
       return;
     }
-    runVerify(file, app);
+    runVerify(file, app, source);
   }
 
   // "generate a test" runs a label through the verifier and shows expected-vs-got.
@@ -199,6 +215,7 @@ export default function Home() {
       const ex = data.example;
       const f = await dataUrlToFile(ex.image, `${ex.id}.${ex.mime.split('/')[1] ?? 'jpg'}`);
       setApp(ex.application);
+      setSource('given'); // compliant bank labels carry their own application values
       setFile(f);
       setPreview(ex.image);
       setGenerated({ note: 'a real compliant label from the bank', expected: 'approve' });
@@ -233,6 +250,7 @@ export default function Home() {
         f = await svgToPngFile(renderLabelSvg(g.art), 'generated.png');
       }
       setApp(g.application);
+      setSource('given'); // generated tests carry their own application values
       setFile(f);
       setPreview(URL.createObjectURL(f));
       setGenerated({ note: fellBack ? `${g.note} (image model unavailable, used the offline template)` : g.note, expected: g.expected });
@@ -257,7 +275,7 @@ export default function Home() {
 
   function clearAll() {
     setApp(EMPTY);
-    takeFile(null);
+    takeFile(null); // also resets the source back to "given"
   }
 
   const radialItems: RadialItem[] = [
@@ -288,7 +306,10 @@ export default function Home() {
     <main className="home">
       <header>
         <h1>Label check</h1>
-        <p>Compare uploaded photo of label to application values.</p>
+        <p>
+          Compare uploaded photo of label to application values (The values we&apos;re checking the label
+          against, fields confirmed by COLA searches).
+        </p>
       </header>
 
       <div className="workspace">
@@ -397,11 +418,29 @@ export default function Home() {
 
         <form className="fields" onSubmit={submit}>
           <fieldset>
-            <legend>Application values</legend>
+            <legend className="visually-hidden">Application values</legend>
+            <div className="fields-head">
+              <span className="fields-title">Application values</span>
+              <label className="source-select">
+                <span className="visually-hidden">Value source</span>
+                <select value={source} onChange={(e) => setSource(e.target.value as ValueSource)} disabled={loading} data-guide="value-source">
+                  <option value="given">Given</option>
+                  <option value="lookup">Fill from image</option>
+                </select>
+              </label>
+            </div>
+            {source === 'lookup' && (
+              <p className="meta source-hint">Values are read from the label image on verify — simulating a registry lookup, then editable as given values.</p>
+            )}
             <div className="grid">
               <div className="field" data-guide="field-beverage_type">
                 <label htmlFor="beverage_type">Beverage type</label>
-                <select id="beverage_type" value={app.beverage_type} onChange={(e) => setField('beverage_type', e.target.value)}>
+                <select
+                  id="beverage_type"
+                  value={app.beverage_type}
+                  onChange={(e) => setField('beverage_type', e.target.value)}
+                  disabled={source === 'lookup'}
+                >
                   {BEVERAGES.map((b) => (
                     <option key={b.value} value={b.value}>
                       {b.label}
@@ -412,7 +451,13 @@ export default function Home() {
               {TEXT_FIELDS.map((f) => (
                 <div key={f.key} data-guide={`field-${f.key}`} className={`field${f.wide ? ' wide' : ''}`}>
                   <label htmlFor={f.key}>{f.label}</label>
-                  <input id={f.key} type="text" value={app[f.key]} onChange={(e) => setField(f.key, e.target.value)} />
+                  <input
+                    id={f.key}
+                    type="text"
+                    value={app[f.key]}
+                    onChange={(e) => setField(f.key, e.target.value)}
+                    disabled={source === 'lookup'}
+                  />
                 </div>
               ))}
             </div>
@@ -420,7 +465,7 @@ export default function Home() {
 
           <div className="actions">
             <button className="btn" type="submit" disabled={loading} data-guide="verify">
-              {loading ? 'Checking...' : 'Verify label'}
+              {loading ? 'Checking...' : source === 'lookup' ? 'Read from image & verify' : 'Verify label'}
             </button>
             <button className="btn secondary" type="button" disabled={loading} onClick={clearAll}>
               Clear
