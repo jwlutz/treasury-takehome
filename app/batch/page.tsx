@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ApplicationFields, Decision, FieldCheck } from '../../lib/policy/types';
 import { parseManifestCsv, type BatchManifestRow } from '../../lib/csv';
-import { DECISION, checkLabel, topReason } from '../ui';
+import { DECISION, checkLabel } from '../ui';
 import { recordUsage } from '../usage';
 
 type RowStatus = 'pending' | 'running' | 'done' | 'error';
@@ -219,8 +219,10 @@ export default function Batch() {
       <header>
         <h1>Batch</h1>
         <p>
-          Check a whole stack of labels against a CSV of application values. Each one runs through the same
-          pipeline; the queue collects everything that needs a human.
+          Check a whole stack of labels against a CSV of application values. Anything that needs human review
+          will be flagged and sent to the review queue if the model isn&apos;t confident it can read it. You can
+          check the model&apos;s work against the file names below: correct and review should get approved, wrong
+          should get rejected.
         </p>
       </header>
 
@@ -346,7 +348,7 @@ export default function Batch() {
                         Decision{arrow('decision')}
                       </button>
                     </th>
-                    <th scope="col">Top reason</th>
+                    <th scope="col">Label</th>
                     <th scope="col">
                       <button type="button" className="th" onClick={() => sortBy('latency')}>
                         Time{arrow('latency')}
@@ -355,36 +357,43 @@ export default function Batch() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sorted.map((r) => {
-                    const reason = r.checks ? topReason(r.checks) : null;
-                    return (
-                      <tr key={r.filename}>
-                        <td>{r.filename}</td>
-                        <td>
-                          {r.status === 'running' && <span className="meta">checking…</span>}
-                          {r.status === 'pending' && <span className="meta">queued</span>}
-                          {r.status === 'error' && <span className="pill tone-reject">error</span>}
-                          {r.status === 'done' && (
-                            <>
-                              <Pill decision={dispo(r)} />
-                              {r.override && <span className="meta"> (agent)</span>}
-                            </>
-                          )}
-                        </td>
-                        <td className="msg">
-                          {r.status === 'error' ? r.message : reason ? `${checkLabel(reason.field)}: ${reason.message}` : r.status === 'done' ? '—' : ''}
-                        </td>
-                        <td>{r.latencyMs ? `${(r.latencyMs / 1000).toFixed(1)}s` : ''}</td>
-                      </tr>
-                    );
-                  })}
+                  {sorted.map((r) => (
+                    <tr key={r.filename}>
+                      <td>{r.filename}</td>
+                      <td>
+                        {r.status === 'running' && <span className="meta">checking…</span>}
+                        {r.status === 'pending' && <span className="meta">queued</span>}
+                        {r.status === 'error' && <span className="pill tone-reject">error</span>}
+                        {r.status === 'done' && (
+                          <>
+                            <Pill decision={dispo(r)} />
+                            {r.override && <span className="meta"> (agent)</span>}
+                          </>
+                        )}
+                      </td>
+                      <td>
+                        {r.preview ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={r.preview}
+                            alt={`label ${r.filename}`}
+                            className="thumb zoom"
+                            onClick={() => setLightbox(r.preview)}
+                          />
+                        ) : (
+                          <span className="meta">—</span>
+                        )}
+                      </td>
+                      <td>{r.latencyMs ? `${(r.latencyMs / 1000).toFixed(1)}s` : ''}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </section>
           ) : (
             <section>
               {queue.length === 0 ? (
-                <p className="meta">review queue is clear. nothing left for a human to decide.</p>
+                <p className="meta">Review queue is clear.</p>
               ) : (
                 <ul className="queue">
                   {queue.map((r) => {

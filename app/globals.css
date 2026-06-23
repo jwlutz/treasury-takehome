@@ -589,6 +589,29 @@ legend {
   padding: 0 0.4rem;
 }
 
+/* fieldset header: "Application values" title with the given / fill-from-image source picker beside it */
+.fields-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.fields-title {
+  font-weight: 700;
+}
+
+.source-select select {
+  min-height: 38px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.9rem;
+}
+
+.source-hint {
+  margin: -0.4rem 0 0.9rem;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -624,6 +647,13 @@ select {
 input:hover,
 select:hover {
   border-color: #6b7686;
+}
+
+input:disabled,
+select:disabled {
+  background: #f1f3f6;
+  color: var(--ink-soft);
+  cursor: not-allowed;
 }
 
 /* buttons */
@@ -965,6 +995,15 @@ summary {
 
 .results td.msg {
   color: var(--ink-soft);
+}
+
+.results .thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  display: block;
 }
 
 button.th {

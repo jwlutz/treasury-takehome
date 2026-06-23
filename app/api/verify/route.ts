@@ -19,6 +19,18 @@ const REQUIRED: (keyof ApplicationFields)[] = [
   'country_of_origin',
 ];
 
+// stand-in application for lookup mode, where the values come from the image rather than the form.
+const BLANK_APP: ApplicationFields = {
+  beverage_type: 'other',
+  brand_name: '',
+  class_type: '',
+  alcohol_content: '',
+  net_contents: '',
+  producer_name: '',
+  producer_address: '',
+  country_of_origin: '',
+};
+
 export async function POST(req: Request) {
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json({ error: 'server is missing OPENAI_API_KEY' }, { status: 500 });
@@ -42,15 +54,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'unsupported image type (use jpeg, png, or webp)' }, { status: 415 });
   }
 
-  let app: ApplicationFields;
+  // lookup mode = "fill from image": the model reads the label to stand in for the COLA lookup, so the
+  // application fields aren't supplied and the required-values guard is skipped.
+  const lookup = String(form.get('mode') ?? 'given') === 'lookup';
+
+  let app: ApplicationFields = BLANK_APP;
   try {
-    app = JSON.parse(String(form.get('application') ?? ''));
+    const raw = form.get('application');
+    if (raw) app = JSON.parse(String(raw));
   } catch {
-    return NextResponse.json({ error: 'application values are not valid json' }, { status: 400 });
+    if (!lookup) return NextResponse.json({ error: 'application values are not valid json' }, { status: 400 });
   }
-  const missing = REQUIRED.filter((k) => !String(app?.[k] ?? '').trim());
-  if (missing.length) {
-    return NextResponse.json({ error: `missing application values: ${missing.join(', ')}` }, { status: 400 });
+  if (!lookup) {
+    const missing = REQUIRED.filter((k) => !String(app?.[k] ?? '').trim());
+    if (missing.length) {
+      return NextResponse.json({ error: `missing application values: ${missing.join(', ')}` }, { status: 400 });
+    }
   }
 
   // image stays in memory for the duration of the call only - nothing is written to disk (no pii at rest)
@@ -58,7 +77,7 @@ export async function POST(req: Request) {
   const mime = file.type || 'image/jpeg';
 
   try {
-    return NextResponse.json(await verifyImage(image, app, mime));
+    return NextResponse.json(await verifyImage(image, app, mime, { lookup }));
   } catch (e) {
     console.error('verify failed', e);
     return NextResponse.json({ error: 'verification failed' }, { status: 502 });
